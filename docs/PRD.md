@@ -216,6 +216,120 @@ New commands added by:
 
 ---
 
+## Automated Testing
+
+### Test Strategy
+Unit tests via Bun test runner (`bun test`). Mock Docker execution to avoid needing actual Docker/yt-dlp during tests.
+
+### Test Files Structure
+```
+ytube-utils/
+├── src/
+│   ├── commands/
+│   │   └── __tests__/
+│   │       ├── bulk-audio-extract.test.ts
+│   │       ├── yt-audio-only.test.ts
+│   │       └── yt-video-mp4.test.ts
+│   ├── core/
+│   │   └── __tests__/
+│   │       ├── executor.test.ts
+│   │       ├── platform.test.ts
+│   │       └── config.test.ts
+│   └── utils/
+│       └── __tests__/
+│           └── logger.test.ts
+└── tests/
+    └── fixtures/
+        ├── sample-videos/       # Mock local video files for bulk-audio-extract
+        │   ├── test-video-1.webm
+        │   ├── test-video-2.mkv
+        │   └── test-video-3.mp4
+        └── mock-responses/       # Mock yt-dlp JSON output
+            ├── single-video.json
+            └── playlist.json
+```
+
+### Mock Approach
+
+**1. Docker Executor Mock (core/executor.ts)**
+```typescript
+// In test mode, intercept executeDocker() and return mock output
+// Use MOCK_DOCKER=true env var to enable mocking
+```
+
+**2. Sample Video Files (tests/fixtures/sample-videos/)**
+- Tiny .webm/.mkv/.mp4 files created via ffmpeg for `bulk-audio-extract` tests
+- File count: 3 per format minimum
+
+**3. Mock yt-dlp JSON Output (tests/fixtures/mock-responses/)**
+```json
+{
+  "id": "dQw4w9WgXcQ",
+  "title": "Rick Astley - Never Gonna Give You Up",
+  "uploader": "Rick Astley",
+  "extractor": "youtube"
+}
+```
+
+**4. Platform Mock (core/platform.ts)**
+```typescript
+// In test mode, mock shell execution to return canned responses
+```
+
+### Test Cases
+
+#### core/executor.test.ts
+- [ ] Builds correct docker command string
+- [ ] Passes correct volume mount path
+- [ ] Passes yt-dlp arguments correctly
+- [ ] Respects threads parameter
+
+#### core/platform.test.ts
+- [ ] Detects pwsh.exe on Windows
+- [ ] Falls back to powershell.exe
+- [ ] Falls back to bash on Unix
+- [ ] Constructs correct command strings per shell
+
+#### core/config.test.ts
+- [ ] Loads .env file when present
+- [ ] Defaults to env var values when .env missing
+- [ ] CLI flags override .env values
+- [ ] Thread cap at 4 enforced
+
+#### commands/bulk-audio-extract.test.ts
+- [ ] Generates correct yt-dlp command for folder input
+- [ ] Sets correct output directory
+- [ ] Sets audio quality flag
+- [ ] Handles multiple file types (.webm, .mkv, .mp4, .avi, .mov)
+
+#### commands/yt-audio-only.test.ts
+- [ ] Generates correct yt-dlp command for single URL
+- [ ] Generates correct yt-dlp command for playlist URL
+- [ ] Uses correct output pattern: `uploader - title.ext`
+- [ ] Includes flatten flag
+
+#### commands/yt-video-mp4.test.ts
+- [ ] Generates correct format selector
+- [ ] Uses correct merge-output-format
+- [ ] Uses correct output pattern: `uploader - title.ext`
+
+#### utils/logger.test.ts
+- [ ] Formats console output correctly
+- [ ] Writes to file when logFile specified
+- [ ] Reports success/failure summary
+
+### Running Tests
+```bash
+bun test                    # Run all tests
+bun test --coverage         # With coverage report
+bun test src/commands/      # Run specific suite
+```
+
+### CI Integration
+Tests run on every commit. Mock Docker to ensure tests are fast and reliable without network access.
+
+---
+
 ## Non-Goals (Out of Scope)
 
 - Keeping original files after extraction (delete originals)
@@ -237,3 +351,5 @@ New commands added by:
 8. Playlist flattening works (default behavior)
 9. New commands can be added without modifying existing code
 10. Error handling continues on per-file failure, reports at end
+11. All unit tests pass via `bun test`
+12. Mock-based tests run without Docker/network access
