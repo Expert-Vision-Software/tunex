@@ -16,7 +16,7 @@ export function getCommand(name: string): YtubeCommand | undefined {
 }
 
 export async function mainMenu(): Promise<void> {
-  const { select, confirm, group } = await import('@clack/prompts');
+  const { select, confirm, group, text } = await import('@clack/prompts');
 
   console.log('music-helper - Media Utility Suite\n');
 
@@ -41,10 +41,12 @@ export async function mainMenu(): Promise<void> {
   }
 
   const input = await group({
-    input: { type: 'text', label: 'Input URL(s)' },
-    outputDir: { type: 'text', label: 'Output Directory', initial: './output' },
-    threads: { type: 'number', label: 'Threads', initial: 4 },
+    input: text({ label: 'Input URL(s)' }),
+    outputDir: text({ label: 'Output Directory', initial: './output' }),
+    threads: text({ label: 'Threads', initial: '4' }),
   });
+
+  const threads = parseInt(input.threads as string, 10) || 4;
 
   const shouldRun = await confirm({
     message: `Run "${selected}" with these settings?`,
@@ -54,7 +56,7 @@ export async function mainMenu(): Promise<void> {
     const opts: CommandOptions = {
       input: input.input,
       outputDir: input.outputDir,
-      threads: input.threads,
+      threads,
     };
 
     await command.execute(opts);
