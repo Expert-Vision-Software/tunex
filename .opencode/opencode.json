@@ -1,0 +1,23 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "skills": {
+    "paths": [
+      "../.agents/skills"
+    ]
+  },
+  "permission": {
+    "skill": {
+      "intellisearch": "allow"
+    }
+  },
+  "mcp": {
+    "deepwiki": {
+      "type": "remote",
+      "url": "https://mcp.deepwiki.com/mcp",
+      "enabled": true
+    }
+  },
+  "plugin": [
+    "opencode-intellisearch"
+  ]
+}
