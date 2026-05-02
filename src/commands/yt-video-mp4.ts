@@ -1,5 +1,5 @@
 import { executeDocker } from '../core/executor';
-import { sanitizeFilename, sanitizeOutputPath } from '../utils/sanitize';
+import { sanitizeFilename } from '../utils/sanitize';
 import { readdirSync, renameSync } from 'bun';
 import type { YtubeCommand, CommandOptions } from './types';
 
@@ -8,7 +8,7 @@ export const ytVideoMp4: YtubeCommand = {
   description: 'Download YouTube video/playlist as mid-quality MP4',
   async execute(opts: CommandOptions): Promise<void> {
     const input = Array.isArray(opts.input) ? opts.input : [opts.input];
-    const outputDir = sanitizeOutputPath(opts.outputDir || '.');
+    const outputDir = opts.outputDir || '.';
     const continueFlag = opts.continueOnError ? '--continue --no-abort-on-error' : '';
 
     for (const url of input) {

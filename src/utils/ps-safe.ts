@@ -14,7 +14,15 @@ export function psEscapePathForDocker(path: string): string {
 }
 
 export function buildDockerCommand(volumeMount: string, ytDlpArgs: string[]): string {
-  const escapedVolume = psEscapePathForDocker(volumeMount);
   const escapedArgs = ytDlpArgs.map(psEscapeArg);
+
+  // Handle multiple volumes (separated by | on Windows)
+  if (volumeMount.includes('|')) {
+    const volumes = volumeMount.split('|');
+    const volumeFlags = volumes.map(v => `-v ${psEscapePathForDocker(v)}`).join(' ');
+    return `docker run -i --rm ${volumeFlags} jauderho/yt-dlp:latest ${escapedArgs.join(' ')}`;
+  }
+
+  const escapedVolume = psEscapePathForDocker(volumeMount);
   return `docker run -i --rm -v ${escapedVolume} jauderho/yt-dlp:latest ${escapedArgs.join(' ')}`;
 }
