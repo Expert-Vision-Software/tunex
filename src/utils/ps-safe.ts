@@ -1,5 +1,5 @@
 export function psEscapeArg(arg: string): string {
-  if (!arg.includes(' ') && !arg.includes('"') && !arg.includes('$') && !arg.includes('`') && !arg.includes('\'') && !arg.includes(':')) {
+  if (!arg.includes(' ') && !arg.includes('"') && !arg.includes('$') && !arg.includes('`') && !arg.includes('\'') && !arg.includes(':') && !arg.includes('(') && !arg.includes(')')) {
     return arg;
   }
   return `'${arg.replace(/'/g, "''")}'`;
