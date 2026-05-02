@@ -11,6 +11,12 @@
       "sourceType": "github",
       "skillPath": "skills/docker-expert/SKILL.md",
       "computedHash": "7a0cf3e3a5f8d18ddb452c784ac965aa40b1bfa2a736c5689d252328f18017d1"
+    },
+    "powershell-windows": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "github",
+      "skillPath": "skills/powershell-windows/SKILL.md",
+      "computedHash": "4cb2c0cf1053c7049af510046169ab82d08205a80f960c8fc7bec39e9d3399b9"
     }
   }
 }

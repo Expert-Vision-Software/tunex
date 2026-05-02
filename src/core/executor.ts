@@ -1,4 +1,5 @@
 import { platformExec, getShell } from './platform';
+import { buildDockerCommand } from '../utils/ps-safe';
 
 export function isMockMode(): boolean {
   return process.env.MOCK_DOCKER === 'true';
@@ -6,11 +7,11 @@ export function isMockMode(): boolean {
 
 export async function executeDocker(volumeMount: string, ytDlpArgs: string[]): Promise<void> {
   if (isMockMode()) {
-    console.log('[MOCK] docker run -it --rm -v "' + volumeMount + '" jauderho/yt-dlp:latest ' + ytDlpArgs.join(' '));
+    const cmd = buildDockerCommand(volumeMount, ytDlpArgs);
+    console.log('[MOCK] ' + cmd);
     return;
   }
 
-  const args = ytDlpArgs.map(arg => arg.includes('%') ? `'${arg}'` : arg);
-  const cmd = `docker run -i --rm -v "${volumeMount}" jauderho/yt-dlp:latest ${args.join(' ')}`;
+  const cmd = buildDockerCommand(volumeMount, ytDlpArgs);
   return platformExec(cmd, getShell());
 }
