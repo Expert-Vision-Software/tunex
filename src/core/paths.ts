@@ -160,14 +160,14 @@ export function normalizePathForDisplay(path: string, execPlatform?: ExecutionPl
   }
 
   if (/^[a-zA-Z]:[\\\/]/.test(trimmed)) {
-    const normalized = trimmed.replace(/\\/g, '/');
     if (platform === 'wsl') {
-      return convertWindowsToWSLPath(normalized);
+      return convertWSLToWindowsPath(trimmed);
     }
     if (platform === 'linux') {
+      const normalized = trimmed.replace(/\\/g, '/');
       return normalized.replace(/^([A-Za-z]):/, '/$1');
     }
-    return normalized;
+    return trimmed;
   }
 
   if (platform === 'windows' && (trimmed.startsWith('/mnt/') || trimmed.startsWith('~/'))) {
@@ -175,14 +175,14 @@ export function normalizePathForDisplay(path: string, execPlatform?: ExecutionPl
   }
 
   if (trimmed === '.' || trimmed.startsWith('./') || trimmed.startsWith('../')) {
-    const cwd = process.cwd().replace(/\\/g, '/');
+    const cwd = process.cwd();
     const normalized = trimmed.replace(/^\.\//, '');
-    return `${cwd}/${normalized}`;
+    return join(cwd, normalized);
   }
 
-  if (!trimmed.includes('/')) {
-    const cwd = process.cwd().replace(/\\/g, '/');
-    return `${cwd}/${trimmed}`;
+  if (!trimmed.includes('/') && !trimmed.includes('\\')) {
+    const cwd = process.cwd();
+    return join(cwd, trimmed);
   }
 
   return trimmed;
