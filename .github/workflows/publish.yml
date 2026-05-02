@@ -28,7 +28,19 @@ jobs:
 
       - run: bun install
 
-      - run: |
+      - name: Check if version exists
+        id: check
+        run: |
+          PKG_VERSION=$(node -e "console.log(require('./package.json').version)")
+          if npm view tunex@${PKG_VERSION} 2>/dev/null; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Publish to npm
+        if: steps.check.outputs.exists == 'false'
+        run: |
           if [ -n "$VERSION" ]; then
             bun run build
           fi
