@@ -15,6 +15,22 @@ export function getCommand(name: string): YtubeCommand | undefined {
   return commands.find((c) => c.name === name);
 }
 
+function extractPlaylistId(url: string): string | undefined {
+  try {
+    const parsed = new URL(url);
+    if (!parsed.hostname.includes('youtube.com') && !parsed.hostname.includes('youtu.be')) {
+      return undefined;
+    }
+    const listParam = parsed.searchParams.get('list');
+    if (listParam && parsed.searchParams.has('v')) {
+      return listParam;
+    }
+    return undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export async function mainMenu(): Promise<void> {
   const { select, confirm, group, text } = await import('@clack/prompts');
 
@@ -48,12 +64,23 @@ export async function mainMenu(): Promise<void> {
 
   const threads = parseInt(input.threads as string, 10) || 4;
 
+  let inputUrl = input.input as string;
+  const playlistId = extractPlaylistId(inputUrl);
+  if (playlistId) {
+    const expandToPlaylist = await confirm({
+      message: `URL belongs to a playlist. Would you like to process the entire playlist?`,
+    });
+    if (expandToPlaylist) {
+      inputUrl = `https://www.youtube.com/playlist?list=${playlistId}`;
+    }
+  }
+
   const shouldRun = await confirm({
     message: `Run "${selected}" with these settings?`,
   });
 
   const opts: CommandOptions = {
-    input: input.input,
+    input: inputUrl,
     outputDir: input.outputDir,
     threads,
   };
