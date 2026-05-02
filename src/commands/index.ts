@@ -2,6 +2,7 @@ import type { YtubeCommand, CommandOptions } from './types.js';
 import { bulkAudioExtract } from './bulk-audio-extract.js';
 import { ytAudioOnly } from './yt-audio-only.js';
 import { ytVideoMp4 } from './yt-video-mp4.js';
+import { loadConfig } from '../core/config.js';
 
 export type { YtubeCommand, CommandOptions };
 
@@ -33,6 +34,7 @@ function extractPlaylistId(url: string): string | undefined {
 
 export async function mainMenu(): Promise<void> {
   const { select, confirm, group, text } = await import('@clack/prompts');
+  const config = loadConfig();
 
   console.log('music-helper - Media Utility Suite\n');
 
@@ -58,11 +60,19 @@ export async function mainMenu(): Promise<void> {
 
   const input = await group({
     input: () => text({ message: 'Input URL(s)' }),
-    outputDir: () => text({ message: 'Output Directory', defaultValue: './output', placeholder: 'Optional, defaults to ./output' }),
-    threads: () => text({ message: 'Threads', defaultValue: '4', placeholder: 'Optional, defaults to 4' }),
+    outputDir: () => text({
+      message: 'Output Directory',
+      defaultValue: config.defaultOutputDir,
+      placeholder: config.defaultOutputDir !== '.' ? `Optional, defaults to ${config.defaultOutputDir}` : 'Optional, defaults to .',
+    }),
+    threads: () => text({
+      message: 'Threads',
+      defaultValue: String(config.defaultThreads),
+      placeholder: config.defaultThreads !== 2 ? `Optional, defaults to ${config.defaultThreads}` : 'Optional, defaults to 2',
+    }),
   });
 
-  const threads = parseInt(input.threads as string, 10) || 4;
+  const threads = parseInt(input.threads as string, 10) || config.defaultThreads;
 
   let inputUrl = input.input as string;
   const playlistId = extractPlaylistId(inputUrl);

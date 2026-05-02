@@ -1,4 +1,4 @@
-import { appendFileSync } from 'bun';
+import { appendFileSync } from 'fs';
 
 export interface LoggerOptions {
   logFile?: string;

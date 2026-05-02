@@ -5,7 +5,6 @@ interface CliFlags {
   flatten?: boolean;
   noContinue?: boolean;
   logFile?: string;
-  config?: string;
   command?: string;
 }
 
@@ -23,12 +22,8 @@ function parseCliFlags(): CliFlags {
       flags.threads = parseInt(args[++i], 10);
     } else if (arg === '--flatten') {
       flags.flatten = true;
-    } else if (arg === '--no-continue') {
-      flags.noContinue = true;
-    } else if (arg === '--log-file') {
+} else if (arg === '--log-file') {
       flags.logFile = args[++i];
-    } else if (arg === '--config') {
-      flags.config = args[++i];
     } else if (!arg.startsWith('-')) {
       flags.command = arg;
     }
@@ -47,7 +42,7 @@ async function runDirect(flags: CliFlags) {
   const { loadConfig } = await import('./core/config.js');
   const { createLogger } = await import('./utils/logger.js');
 
-  const config = loadConfig(flags.config);
+  const config = loadConfig();
 
   const command = getCommand(flags.command!);
   if (!command) {
