@@ -3,6 +3,8 @@ import { bulkAudioExtract } from './bulk-audio-extract.js';
 import { ytAudioOnly } from './yt-audio-only.js';
 import { ytVideoMp4 } from './yt-video-mp4.js';
 import { loadConfig } from '../core/config.js';
+import { getPlatformInfo } from '../core/platform.js';
+import { isValidLocalPath, getPathPlaceholder } from '../core/paths.js';
 
 export type { YtubeCommand, CommandOptions };
 
@@ -81,12 +83,13 @@ function extractPlaylistId(url: string): string | undefined {
 export async function mainMenu(): Promise<void> {
   const { select, confirm, group, text, isCancel } = await import('@clack/prompts');
   const config = loadConfig();
+  const platform = getPlatformInfo();
 
   console.log('music-helper - Media Utility Suite\n');
 
   const inputValue = await text({
     message: 'Input URL or local path',
-    placeholder: 'https://youtube.com/... or C:\\path\\to\\videos',
+    placeholder: getPathPlaceholder(platform.platform),
   });
 
   if (isCancel(inputValue) || !inputValue) {
@@ -106,8 +109,8 @@ export async function mainMenu(): Promise<void> {
     commandList = youtubeCommands;
     sourceLabel = 'YouTube';
   } else {
-    if (!isValidLocalPath(inputValue)) {
-      console.log('Error: Invalid local path format.');
+    if (!isValidLocalPath(inputValue, platform.platform)) {
+      console.log('Error: Invalid local path format for your platform.');
       return;
     }
     commandList = localCommands;
