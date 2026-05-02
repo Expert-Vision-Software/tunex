@@ -1,9 +1,25 @@
 {
   "name": "tunex-cli",
   "type": "module",
-  "version": "0.9.10",
+  "version": "0.9.11",
   "description": "Cross-platform CLI for downloading YouTube/Spotify content and managing local media — audio extraction, metadata tagging, and intelligent file matching via LLM inference.",
-  "keywords": ["youtube", "spotify", "audio", "mp3", "video", "download", "converter", "metadata", "tagging", "cli", "bun", "media", "music", "yt-dlp", "spotdl"],
+  "keywords": [
+    "youtube",
+    "spotify",
+    "audio",
+    "mp3",
+    "video",
+    "download",
+    "converter",
+    "metadata",
+    "tagging",
+    "cli",
+    "bun",
+    "media",
+    "music",
+    "yt-dlp",
+    "spotdl"
+  ],
   "bin": {
     "tunex": "./src/main.ts"
   },
