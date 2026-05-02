@@ -43,7 +43,7 @@ async function runInteractive() {
 }
 
 async function runDirect(flags: CliFlags) {
-  const { getCommand } = await import('./commands/index.js');
+  const { getCommand, printCLIRecommendation } = await import('./commands/index.js');
   const { loadConfig } = await import('./core/config.js');
   const { createLogger } = await import('./utils/logger.js');
 
@@ -90,6 +90,7 @@ async function runDirect(flags: CliFlags) {
   if (success) {
     logger.info('=== Summary ===');
     logger.info('All tasks completed.');
+    printCLIRecommendation(command.name, opts);
   }
 }
 

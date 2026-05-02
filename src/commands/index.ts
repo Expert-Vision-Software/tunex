@@ -42,8 +42,8 @@ export async function mainMenu(): Promise<void> {
 
   const input = await group({
     input: () => text({ message: 'Input URL(s)' }),
-    outputDir: () => text({ message: 'Output Directory', initial: './output' }),
-    threads: () => text({ message: 'Threads', initial: '4' }),
+    outputDir: () => text({ message: 'Output Directory', defaultValue: './output' }),
+    threads: () => text({ message: 'Threads', defaultValue: '4' }),
   });
 
   const threads = parseInt(input.threads as string, 10) || 4;
@@ -60,5 +60,19 @@ export async function mainMenu(): Promise<void> {
     };
 
     await command.execute(opts);
+    printCLIRecommendation(selected, opts);
   }
+}
+
+export function printCLIRecommendation(commandName: string, opts: CommandOptions): void {
+  const flags: string[] = ['-i', `"${opts.input}"`];
+  if (opts.outputDir) {
+    flags.push('-o', `"${opts.outputDir}"`);
+  }
+  if (opts.threads && opts.threads !== 4) {
+    flags.push('-t', String(opts.threads));
+  }
+  const cmd = `bun run src/main.ts ${commandName} ${flags.join(' ')}`;
+  console.log('\n[INFO] Re-run this command non-interactively:');
+  console.log('     ' + cmd);
 }
