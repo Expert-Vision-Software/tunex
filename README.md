@@ -6,10 +6,19 @@
 
 Cross-platform CLI for downloading YouTube/Spotify content, extracting audio, and managing music metadata.
 
-## Install
+## Use
+
+Without install,
 
 ```bash
-bun install tunex -g
+bunx tunex-cli
+```
+
+or global install which allows you to use shorter `tunex` command.
+
+```bash
+bun install tunex-cli -g
+tunex
 ```
 
 ## Overview
@@ -29,13 +38,13 @@ tunex is a cross-platform CLI utility for downloading YouTube and Spotify conten
 ### Interactive Mode
 
 ```bash
-bunx tunex
+bunx tunex-cli
 ```
 
 ### Direct CLI Mode
 
 ```bash
-bunx tunex run bulk-audio-extract -i "./videos" -o "./audio"
+bunx tunex-cli run bulk-audio-extract -i "./videos" -o "./audio"
 ```
 
 ## Commands
@@ -49,7 +58,7 @@ bunx tunex run bulk-audio-extract -i "./videos" -o "./audio"
 ## Configuration
 
 ```bash
-bunx tunex config
+bunx tunex-cli config
 ```
 
 Interactive tool to view and set defaults for output directory, thread count, and log file path. Settings are saved to `~/.tunex/config.json`.
