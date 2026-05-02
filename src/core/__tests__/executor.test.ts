@@ -50,7 +50,7 @@ describe("executor", () => {
       "-f", "bestaudio",
       "--extract-audio",
       "--audio-format", "mp3",
-      "--audio-quality", "128k"
+      "--audio-quality", "0"
     ];
 
     await executeDocker(volumeMount, args);

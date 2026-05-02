@@ -17,7 +17,7 @@ export const ytAudioOnly: YtubeCommand = {
         '-f', 'bestaudio',
         '--extract-audio',
         '--audio-format', 'mp3',
-        '--audio-quality', '128k',
+        '--audio-quality', '0',
         '--no-playlist',
         continueFlag,
         '-o', `${outputDir}/%(uploader)s - %(title)s.%(ext)s`,
