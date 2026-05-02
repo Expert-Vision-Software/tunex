@@ -2,11 +2,20 @@ import { readFileSync, existsSync, mkdirSync, writeFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { homedir } from 'os';
 import { parse } from 'dotenv';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 interface Config {
   defaultThreads: number;
   defaultOutputDir: string;
   logFile: string | null;
+}
+
+function getAppName(): string {
+  const pkg = JSON.parse(readFileSync(join(__dirname, '..', '..', 'package.json'), 'utf-8'));
+  return pkg.name;
 }
 
 const MAX_THREADS = 4;
@@ -16,11 +25,6 @@ export const DEFAULT_CONFIG: Config = {
   defaultOutputDir: '.',
   logFile: null,
 };
-
-function getAppName(): string {
-  const pkg = JSON.parse(readFileSync('./package.json', 'utf-8'));
-  return pkg.name;
-}
 
 function getConfigPath(): string {
   const appName = getAppName();
