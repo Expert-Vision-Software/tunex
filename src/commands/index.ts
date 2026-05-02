@@ -135,7 +135,6 @@ export async function mainMenu(): Promise<void> {
   }
 
   const input = await group({
-    input: () => text({ message: 'Input URL(s)', defaultValue: inputValue }),
     outputDir: () => text({
       message: 'Output Directory',
       defaultValue: config.defaultOutputDir,
@@ -150,7 +149,7 @@ export async function mainMenu(): Promise<void> {
 
   const threads = parseInt(input.threads as string, 10) || config.defaultThreads;
 
-  let inputUrl = input.input as string;
+  let inputUrl = inputValue;
 
   if (isUrl) {
     const playlistId = extractPlaylistId(inputUrl);
