@@ -1,8 +1,8 @@
 # tunex
 
 [![CI](https://github.com/Expert-Vision-Software/tunex/actions/workflows/publish.yml/badge.svg)](https://github.com/Expert-Vision-Software/tunex/actions)
-[![npm version](https://img.shields.io/npm/v/@expert-vision-software/tunex-cli)](https://www.npmjs.com/package/@expert-vision-software/tunex-cli)
-[![License: MIT](https://img.shields.io/npm/l/@expert-vision-software/tunex-cli)](https://opensource.org/licenses/MIT)
+[![npm version](https://img.shields.io/npm/v/tunex-cli)](https://www.npmjs.com/package/tunex-cli)
+[![License: MIT](https://img.shields.io/npm/l/tunex-cli)](https://opensource.org/licenses/MIT)
 
 Cross-platform CLI for downloading YouTube/Spotify content, extracting audio, and managing music metadata.
 
