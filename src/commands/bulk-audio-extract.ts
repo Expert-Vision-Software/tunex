@@ -63,7 +63,7 @@ export const bulkAudioExtract: YtubeCommand = {
 function sanitizeDownloadedFiles(outputDir: string): void {
   let count = 0;
   try {
-    const files = readdirSync(outputDir);
+    const files = fsReaddir(outputDir);
     for (const file of files) {
       if (!file.includes('/') && !file.includes('\\') && !file.includes(':') &&
           !file.includes('*') && !file.includes('?') && !file.includes('"') &&

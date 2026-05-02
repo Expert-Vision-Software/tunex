@@ -1,6 +1,7 @@
 import { executeDocker } from '../core/executor.js';
 import { sanitizeFilename } from '../utils/sanitize.js';
-import { readdirSync, renameSync } from 'bun';
+import { renameSync } from 'bun';
+import { readdirSync as fsReaddir } from 'fs';
 import type { YtubeCommand, CommandOptions } from './types.js';
 import { getWorkingDirForDocker, buildVolumeMount } from '../core/paths.js';
 import { DEFAULT_CONFIG } from '../core/config.js';
@@ -38,7 +39,7 @@ export const ytAudioOnly: YtubeCommand = {
 function sanitizeDownloadedFiles(outputDir: string): void {
   let count = 0;
   try {
-    const files = readdirSync(outputDir);
+    const files = fsReaddir(outputDir);
     for (const file of files) {
       const needsSanitize = file.includes('/') || file.includes('\\') || file.includes(':') ||
         file.includes('*') || file.includes('?') || file.includes('"') ||

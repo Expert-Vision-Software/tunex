@@ -177,12 +177,12 @@ export function normalizePathForDisplay(path: string, execPlatform?: ExecutionPl
   if (trimmed === '.' || trimmed.startsWith('./') || trimmed.startsWith('../')) {
     const cwd = process.cwd();
     const normalized = trimmed.replace(/^\.\//, '');
-    return join(cwd, normalized);
+    return `${cwd}/${normalized}`.replace(/\\/g, '/');
   }
 
   if (!trimmed.includes('/') && !trimmed.includes('\\')) {
     const cwd = process.cwd();
-    return join(cwd, trimmed);
+    return `${cwd}/${trimmed}`.replace(/\\/g, '/');
   }
 
   return trimmed;
