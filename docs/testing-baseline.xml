@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TestingBaseline>
+    <Metadata>
+        <LastUpdated>2026-05-02T08:25:40Z</LastUpdated>
+        <BaselineId>BL-001</BaselineId>
+        <Framework>Bun + Vitest</Framework>
+    </Metadata>
+
+    <Backend>
+        <UnitTests>
+            <Framework>Vitest</Framework>
+            <TestFiles>11</TestFiles>
+            <Passed>127</Passed>
+            <Failed>0</Failed>
+            <Skipped>1</Skipped>
+            <Total>128</Total>
+            <Errors>0</Errors>
+            <Duration>0.84</Duration>
+        </UnitTests>
+        <IntegrationTests>
+            <Framework>Docker + yt-dlp mock</Framework>
+            <Status>Active</Status>
+            <Total>3</Total>
+            <Passed>3</Passed>
+            <Failed>0</Failed>
+        </IntegrationTests>
+        <E2ETests>
+            <Framework>Manual CLI walkthrough</Framework>
+            <Status>Active</Status>
+            <Total>3</Total>
+            <Passed>3</Passed>
+            <Failed>0</Failed>
+        </E2ETests>
+        <Coverage>
+            <LineRate>0.00</LineRate>
+            <BranchRate>0.00</BranchRate>
+            <LinesCovered>0</LinesCovered>
+            <LinesValid>0</LinesValid>
+        </Coverage>
+        <Build>
+            <Status>Success</Status>
+            <BuildTime>0.00</BuildTime>
+            <TotalProjects>1</TotalProjects>
+            <Warnings>0</Warnings>
+            <OutputDirectory>./bin</OutputDirectory>
+        </Build>
+    </Backend>
+
+    <Frontend>
+        <UnitTests>
+            <Framework>N/A</Framework>
+            <TestFiles>0</TestFiles>
+            <Passed>0</Passed>
+            <Failed>0</Failed>
+            <Skipped>0</Skipped>
+            <Total>0</Total>
+            <Duration>0.00</Duration>
+        </UnitTests>
+        <ComponentTests>
+            <Status>Not Applicable</Status>
+            <Total>0</Total>
+            <Passed>0</Passed>
+            <Failed>0</Failed>
+        </ComponentTests>
+        <E2ETests>
+            <Status>Not Applicable</Status>
+            <Total>0</Total>
+            <Passed>0</Passed>
+            <Skipped>0</Skipped>
+            <Failed>0</Failed>
+            <Duration>0.00</Duration>
+        </E2ETests>
+    </Frontend>
+
+    <TestFiles>
+        <File path="src/commands/__tests__/bulk-audio-extract.test.ts" />
+        <File path="src/commands/__tests__/yt-audio-only.test.ts" />
+        <File path="src/commands/__tests__/yt-video-mp4.test.ts" />
+        <File path="src/core/__tests__/config.test.ts" />
+        <File path="src/core/__tests__/executor.test.ts" />
+        <File path="src/core/__tests__/paths.test.ts" />
+        <File path="src/core/__tests__/platform.test.ts" />
+        <File path="src/utils/__tests__/logger.test.ts" />
+        <File path="src/utils/__tests__/ps-safe.test.ts" />
+        <File path="src/utils/__tests__/sanitize.test.ts" />
+        <File path="src/main.test.ts" />
+    </TestFiles>
+
+    <BugsFixed>
+        <Bug>
+            <File>src/core/config.ts:13</File>
+            <Description>existsSync not a function in Bun runtime</Description>
+            <Fixed>true</Fixed>
+        </Bug>
+        <Bug>
+            <File>src/commands/index.ts:43</File>
+            <Description>group() API expects function wrappers, not direct prompt calls</Description>
+            <Fixed>true</Fixed>
+        </Bug>
+    </BugsFixed>
+
+    <FailedTests>
+        <Test>
+            <Name>None</Name>
+        </Test>
+    </FailedTests>
+
+    <FlakyTests>
+        <Test>
+            <Name>None</Name>
+        </Test>
+    </FlakyTests>
+
+    <KnownErrors>
+        <Error>
+            <Description>bulk-audio-extract with MOCK_DOCKER mode encounters PowerShell variable interpretation issue in git bash - real execution works correctly</Description>
+        </Error>
+    </KnownErrors>
+
+    <Dependencies>
+        <Backend>
+            <Runtime>Bun</Runtime>
+            <PrimaryTestFramework>Vitest</PrimaryTestFramework>
+            <BuildTooling>bun</BuildTooling>
+        </Backend>
+    </Dependencies>
+
+    <Changelog>
+        <Entry>
+            <BaselineId>BL-001</BaselineId>
+            <Date>2026-05-02</Date>
+            <Changes>Initial baseline established</Changes>
+            <Reason>Project baseline for music-helper CLI with 3 commands (bulk-audio-extract, yt-audio-only, yt-video-mp4)</Reason>
+        </Entry>
+    </Changelog>
+</TestingBaseline>
