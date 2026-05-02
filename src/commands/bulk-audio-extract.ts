@@ -2,6 +2,7 @@ import { executeDocker } from '../core/executor';
 import { sanitizeFilename } from '../utils/sanitize';
 import { readdirSync, renameSync } from 'bun';
 import type { YtubeCommand, CommandOptions } from './types';
+import { getWorkingDirForDocker, buildVolumeMount } from '../core/paths';
 
 export const bulkAudioExtract: YtubeCommand = {
   name: 'bulk-audio-extract',
@@ -10,9 +11,10 @@ export const bulkAudioExtract: YtubeCommand = {
     const input = Array.isArray(opts.input) ? opts.input : [opts.input];
     const outputDir = opts.outputDir || '.';
     const continueFlag = opts.continueOnError ? ['--continue', '--no-abort-on-error'] : [];
+    const workingDir = getWorkingDirForDocker();
 
     for (const folder of input) {
-      const volumeMount = `${process.cwd().replace(/\\/g, '/')}:/downloads`;
+      const volumeMount = buildVolumeMount(workingDir);
       const args = [
         '--extract-audio',
         '--audio-format', 'mp3',

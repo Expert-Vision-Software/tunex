@@ -37,33 +37,6 @@ export function isYouTubeUrl(url: string): boolean {
   }
 }
 
-export function isLocalPath(path: string): boolean {
-  if (isYouTubeUrl(path)) {
-    return false;
-  }
-  if (path.startsWith('http://') || path.startsWith('https://')) {
-    return false;
-  }
-  return true;
-}
-
-export function isValidLocalPath(path: string): boolean {
-  if (!isLocalPath(path)) {
-    return false;
-  }
-  try {
-    if (path.includes('/') || path.includes('\\')) {
-      return true;
-    }
-    if (/^[a-zA-Z]:/.test(path)) {
-      return true;
-    }
-    return false;
-  } catch {
-    return false;
-  }
-}
-
 function extractPlaylistId(url: string): string | undefined {
   try {
     if (!isYouTubeUrl(url)) {

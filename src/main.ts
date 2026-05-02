@@ -36,6 +36,13 @@ function parseCliFlags(): CliFlags {
 
 async function runInteractive() {
   const { mainMenu } = await import('./commands/index.js');
+  const { getPlatformInfo } = await import('./core/platform.js');
+  const { createLogger } = await import('./utils/logger.js');
+
+  const platform = getPlatformInfo();
+  const logger = createLogger();
+  logger.info('Platform: ' + platform.platform + ' | Shell: ' + platform.shell + ' | Docker: ' + (platform.hasDocker ? 'available' : 'not found'));
+
   await mainMenu();
 }
 
@@ -43,6 +50,7 @@ async function runDirect(flags: CliFlags) {
   const { getCommand, printCLIRecommendation } = await import('./commands/index.js');
   const { loadConfig } = await import('./core/config.js');
   const { createLogger } = await import('./utils/logger.js');
+  const { getPlatformInfo } = await import('./core/platform.js');
 
   const config = loadConfig();
 
@@ -60,6 +68,12 @@ async function runDirect(flags: CliFlags) {
   }
 
   const logger = createLogger({ logFile: flags.logFile ?? config.logFile });
+
+  const platform = getPlatformInfo();
+  logger.info('Platform: ' + platform.platform + ' | Shell: ' + platform.shell + ' | Docker: ' + (platform.hasDocker ? 'available' : 'not found'));
+  if (platform.isWSL) {
+    logger.info('WSL detected with Docker context: ' + platform.dockerContext);
+  }
 
   const opts = {
     input: flags.input,

@@ -142,3 +142,34 @@ export function getPathPlaceholder(platform: ExecutionPlatform): string {
       return '~/path/to/videos or https://youtube.com/...';
   }
 }
+
+export function getWorkingDirForDocker(): string {
+  const platform = getPlatformInfo();
+  const cwd = process.cwd().replace(/\\/g, '/');
+
+  if (platform.isWSL && platform.dockerContext === 'windows') {
+    return convertWSLToWindowsPath(cwd);
+  }
+
+  return cwd;
+}
+
+export function buildVolumeMount(workingDir: string, targetDir?: string): string {
+  if (!targetDir || targetDir === '.' || targetDir === workingDir) {
+    return `${workingDir}:/downloads`;
+  }
+
+  const normalizedTarget = targetDir.replace(/\\/g, '/');
+
+  if (normalizedTarget.startsWith('./') || normalizedTarget.startsWith('../')) {
+    const resolvedTarget = `${workingDir}/${normalizedTarget.replace(/^\.\//, '')}`;
+    return `${workingDir}:/downloads|${resolvedTarget}:/target`;
+  }
+
+  if (/^[a-zA-Z]:/.test(normalizedTarget)) {
+    const normalizedWin = normalizedTarget.replace(/\//g, '/');
+    return `${workingDir}:/downloads|${normalizedWin}:/target`;
+  }
+
+  return `${workingDir}:/downloads|${normalizedTarget}:/target`;
+}

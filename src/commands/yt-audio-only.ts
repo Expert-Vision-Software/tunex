@@ -2,6 +2,7 @@ import { executeDocker } from '../core/executor';
 import { sanitizeFilename } from '../utils/sanitize';
 import { readdirSync, renameSync } from 'bun';
 import type { YtubeCommand, CommandOptions } from './types';
+import { getWorkingDirForDocker, buildVolumeMount } from '../core/paths';
 
 export const ytAudioOnly: YtubeCommand = {
   name: 'yt-audio-only',
@@ -10,9 +11,10 @@ export const ytAudioOnly: YtubeCommand = {
     const input = Array.isArray(opts.input) ? opts.input : [opts.input];
     const outputDir = opts.outputDir || '.';
     const continueFlag = opts.continueOnError ? ['--continue', '--no-abort-on-error'] : [];
+    const workingDir = getWorkingDirForDocker();
 
     for (const url of input) {
-      const volumeMount = `${process.cwd().replace(/\\/g, '/')}:/downloads`;
+      const volumeMount = buildVolumeMount(workingDir);
       const args = [
         '-f', 'bestaudio',
         '--extract-audio',

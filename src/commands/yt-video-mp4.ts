@@ -2,6 +2,7 @@ import { executeDocker } from '../core/executor';
 import { sanitizeFilename } from '../utils/sanitize';
 import { readdirSync, renameSync } from 'bun';
 import type { YtubeCommand, CommandOptions } from './types';
+import { getWorkingDirForDocker, buildVolumeMount } from '../core/paths';
 
 export const ytVideoMp4: YtubeCommand = {
   name: 'yt-video-mp4',
@@ -10,9 +11,10 @@ export const ytVideoMp4: YtubeCommand = {
     const input = Array.isArray(opts.input) ? opts.input : [opts.input];
     const outputDir = opts.outputDir || '.';
     const continueFlag = opts.continueOnError ? ['--continue', '--no-abort-on-error'] : [];
+    const workingDir = getWorkingDirForDocker();
 
     for (const url of input) {
-      const volumeMount = `${process.cwd().replace(/\\/g, '/')}:/downloads`;
+      const volumeMount = buildVolumeMount(workingDir);
       const args = [
         '-f', 'bestaudio[ext=m4a]+worstvideo[height>=720]/bestaudio+bestvideo',
         '--merge-output-format', 'mp4',
