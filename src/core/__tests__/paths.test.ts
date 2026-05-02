@@ -17,7 +17,7 @@ describe("isValidLocalPath", () => {
 
     describe("relative paths (unix-style)", () => {
       beforeEach(() => {
-        process.cwd = () => "C:\\dev\\projects\\music-helper";
+        process.cwd = () => "C:\\dev\\projects\\tunex";
       });
 
       test.each([

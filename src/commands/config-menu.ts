@@ -2,9 +2,9 @@ import { select, text, confirm, isCancel } from '@clack/prompts';
 import { loadConfig, saveConfigFile, DEFAULT_CONFIG, loadConfigFile } from '../core/config.js';
 import { parse } from 'dotenv';
 import { readFileSync, existsSync } from 'fs';
-import type { Config } from '../core/config.js';
 import { normalizePathForDisplay } from '../core/paths.js';
 import { getPlatformInfo } from '../core/platform.js';
+import { APP_NAME } from '../constants.js';
 
 function loadEnvFiles(): Record<string, string> {
   const result: Record<string, string> = {};
@@ -20,7 +20,7 @@ function loadEnvFiles(): Record<string, string> {
 }
 
 export async function configMenu(): Promise<void> {
-  console.log('\nmusic-helper - Config Management\n');
+  console.log('\n' + APP_NAME + ' - Config Management\n');
 
   let config = loadConfig();
   let edited = false;
@@ -60,7 +60,7 @@ export async function configMenu(): Promise<void> {
       console.log('  Sources (highest to lowest precedence):');
       console.log('    1. CLI flags (passed at runtime)');
       console.log('    2. Environment variables (.env.local > .env)');
-      console.log('    3. Config file (~/.music-helper/config.json)');
+      console.log('    3. Config file (~/.tunex/config.json)');
       console.log('    4. Factory defaults (DEFAULT_CONFIG)');
       console.log('');
       console.log('  Current Values:');

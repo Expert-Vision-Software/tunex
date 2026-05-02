@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <TestingBaseline>
     <Metadata>
-        <LastUpdated>2026-05-02T08:25:40Z</LastUpdated>
-        <BaselineId>BL-001</BaselineId>
+        <LastUpdated>2026-05-02T05:26:06Z</LastUpdated>
+        <BaselineId>BL-002</BaselineId>
         <Framework>Bun + Vitest</Framework>
     </Metadata>
 
@@ -15,7 +15,7 @@
             <Skipped>1</Skipped>
             <Total>128</Total>
             <Errors>0</Errors>
-            <Duration>0.84</Duration>
+            <Duration>0.911</Duration>
         </UnitTests>
         <IntegrationTests>
             <Framework>Docker + yt-dlp mock</Framework>
@@ -39,10 +39,14 @@
         </Coverage>
         <Build>
             <Status>Success</Status>
-            <BuildTime>0.00</BuildTime>
+            <BuildTime>0.424</BuildTime>
             <TotalProjects>1</TotalProjects>
             <Warnings>0</Warnings>
-            <OutputDirectory>./bin</OutputDirectory>
+            <OutputDirectory>./dist</OutputDirectory>
+            <FileCount>2</FileCount>
+            <TotalSizeMB>112.30</TotalSizeMB>
+            <BinaryName>tunex.exe</BinaryName>
+            <BinarySizeMB>112.30</BinarySizeMB>
         </Build>
     </Backend>
 
@@ -131,6 +135,12 @@
             <Date>2026-05-02</Date>
             <Changes>Initial baseline established</Changes>
             <Reason>Project baseline for music-helper CLI with 3 commands (bulk-audio-extract, yt-audio-only, yt-video-mp4)</Reason>
+        </Entry>
+        <Entry>
+            <BaselineId>BL-002</BaselineId>
+            <Date>2026-05-02</Date>
+            <Changes>Build binary now available: tunex.exe (112.30 MB)</Changes>
+            <Reason>Build binaries now included in baseline metrics</Reason>
         </Entry>
     </Changelog>
 </TestingBaseline>

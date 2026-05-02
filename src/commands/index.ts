@@ -5,6 +5,7 @@ import { ytVideoMp4 } from './yt-video-mp4.js';
 import { loadConfig } from '../core/config.js';
 import { getPlatformInfo } from '../core/platform.js';
 import { isValidLocalPath, getPathPlaceholder } from '../core/paths.js';
+import { APP_NAME } from '../constants.js';
 
 export type { YtubeCommand, CommandOptions };
 
@@ -58,7 +59,7 @@ export async function mainMenu(): Promise<void> {
   const config = loadConfig();
   const platform = getPlatformInfo();
 
-  console.log('music-helper - Media Utility Suite\n');
+  console.log(APP_NAME + ' - Media Utility Suite\n');
 
   const inputValue = await text({
     message: 'Input URL or local path',
@@ -165,7 +166,7 @@ export function printCLIRecommendation(commandName: string, opts: CommandOptions
   if (opts.threads && opts.threads !== 4) {
     flags.push('-t', String(opts.threads));
   }
-  const cmd = `bunx music-helper run ${commandName} ${flags.join(' ')}`;
+  const cmd = `bunx ${APP_NAME} run ${commandName} ${flags.join(' ')}`;
   console.log('\n[INFO] Re-run this command non-interactively:');
   console.log('     ' + cmd);
 }

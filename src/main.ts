@@ -1,4 +1,5 @@
 import { ensureConfigDir, loadConfig } from './core/config.js';
+import { APP_NAME } from './constants.js';
 
 interface CliFlags {
   input?: string;
@@ -71,7 +72,7 @@ async function runDirect(flags: CliFlags) {
 
   if (!flags.input) {
     console.error('Error: --input flag is required');
-    console.error('Usage: bun run ytube-utils <command> -i <input> [-o <output-dir>] [-t <threads>]');
+    console.error('Usage: bun run ' + APP_NAME + ' <command> -i <input> [-o <output-dir>] [-t <threads>]');
     process.exit(1);
   }
 

@@ -2,3 +2,4 @@ node_modules
 output
 debug.log
 .env.local
+dist

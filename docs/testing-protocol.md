@@ -1,11 +1,11 @@
 ---
-name: music-helper testing protocol
-description: Test execution, baseline management, and threshold evaluation for music-helper CLI project
+name: tunex testing protocol
+description: Test execution, baseline management, and threshold evaluation for tunex CLI project
 updated: 2026-05-02
 baseline: docs/testing-baseline.xml
 ---
 
-# Music-Helper Testing Protocol
+# Tunex Testing Protocol
 
 ## Project Context
 
@@ -13,6 +13,7 @@ baseline: docs/testing-baseline.xml
 **Runtime:** Bun
 **Test Framework:** Vitest
 **Commands:** bulk-audio-extract, yt-audio-only, yt-video-mp4
+**Binary Output:** `./dist/tunex.exe` (112 MB standalone)
 
 ## Critical Rules
 
@@ -32,9 +33,15 @@ Build → Test_Backend → Evaluate → Decision
 
 ### Stage: Build
 ```bash
-bun run build  # if exists
-# or check syntax via bun run src/main.ts --help
+bun run build
 ```
+
+**Build Artifact Metrics (record for baseline):**
+- `dist/tunex.exe` binary size in MB
+- Build time in seconds
+- Build status (success/failure)
+
+If build fails, STOP immediately — do not proceed to testing.
 
 ### Stage: Test_Backend
 ```bash
@@ -56,7 +63,7 @@ If PASS + threshold met → Update `@testing-baseline.xml`
 | Test count | > 10% change | Any |
 | Pass rate | > 10% change | Any |
 | Build time | > 10% increase | Up only |
-| Coverage | > 5% change | Any |
+| Build binary size | > 5% change | Any |
 | Test duration | > 20% increase | Up only |
 
 ## Decision Matrix
@@ -86,6 +93,7 @@ MOCK_DOCKER=true bun run src/main.ts <command>
 - Test failures increase
 - Pass rate < 90%
 - Build time > 10% increase
+- Build binary size > 5% change
 - New unhandled errors
 
 ## Anti-Patterns
