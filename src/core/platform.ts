@@ -32,10 +32,36 @@ function checkDocker(): boolean {
   }
 }
 
+function checkGitBash(): boolean {
+  const shell = process.env.SHELL;
+  if (shell && (shell.includes('bash') || shell.includes('msys') || shell.includes('cygwin'))) {
+    return true;
+  }
+  const ostype = process.env.OSTYPE;
+  if (ostype && (ostype.includes('msys') || ostype.includes('cygwin'))) {
+    return true;
+  }
+  return false;
+}
+
+function checkBashOnWindows(): boolean {
+  try {
+    const result = Bun.spawnSync({ cmd: ['bash', '--version'], stdout: 'pipe' });
+    return result.exitCode === 0;
+  } catch {
+    return false;
+  }
+}
+
 function detectShell(): Shell {
   if (process.platform !== 'win32') {
     return 'bash';
   }
+
+  if (checkGitBash() || checkBashOnWindows()) {
+    return 'bash';
+  }
+
   try {
     const result = Bun.spawnSync({ cmd: ['pwsh.exe', '-Version'], stdout: 'pipe' });
     if (result.exitCode === 0) return 'pwsh';
@@ -63,9 +89,16 @@ export function detectPlatform(): PlatformInfo {
     isWSL = checkWSL();
   }
 
-  const executionPlatform: ExecutionPlatform =
-    isWindows ? 'windows' :
-    isWSL ? 'wsl' : 'linux';
+  let executionPlatform: ExecutionPlatform;
+  if (isWindows && (checkGitBash() || checkBashOnWindows())) {
+    executionPlatform = 'linux';
+  } else if (isWindows) {
+    executionPlatform = 'windows';
+  } else if (isWSL) {
+    executionPlatform = 'wsl';
+  } else {
+    executionPlatform = 'linux';
+  }
 
   const shell = detectShell();
   const dockerContext = detectDockerContext(executionPlatform);
