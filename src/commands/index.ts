@@ -165,7 +165,7 @@ export function printCLIRecommendation(commandName: string, opts: CommandOptions
   if (opts.threads && opts.threads !== 4) {
     flags.push('-t', String(opts.threads));
   }
-  const cmd = `bun run src/main.ts ${commandName} ${flags.join(' ')}`;
+  const cmd = `bunx music-helper run ${commandName} ${flags.join(' ')}`;
   console.log('\n[INFO] Re-run this command non-interactively:');
   console.log('     ' + cmd);
 }
