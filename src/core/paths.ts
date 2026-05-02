@@ -174,6 +174,17 @@ export function normalizePathForDisplay(path: string, execPlatform?: ExecutionPl
     return convertWSLToWindowsPath(trimmed);
   }
 
+  if (trimmed === '.' || trimmed.startsWith('./') || trimmed.startsWith('../')) {
+    const cwd = process.cwd().replace(/\\/g, '/');
+    const normalized = trimmed.replace(/^\.\//, '');
+    return `${cwd}/${normalized}`;
+  }
+
+  if (!trimmed.includes('/')) {
+    const cwd = process.cwd().replace(/\\/g, '/');
+    return `${cwd}/${trimmed}`;
+  }
+
   return trimmed;
 }
 
