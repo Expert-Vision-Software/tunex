@@ -20,7 +20,7 @@ export const bulkAudioExtract: YtubeCommand = {
         '--restrict-filenames',
         '--no-playlist',
         ...continueFlag,
-        '-o', `./output/%(title)s.%(ext)s`,
+        '-o', `${outputDir}/%(title)s.%(ext)s`,
         `/downloads/${folder}/`
       ].filter(Boolean);
 

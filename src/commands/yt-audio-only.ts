@@ -21,7 +21,7 @@ export const ytAudioOnly: YtubeCommand = {
         '--restrict-filenames',
         '--no-playlist',
         ...continueFlag,
-        '-o', `./output/%(uploader)s - %(title)s.%(ext)s`,
+        '-o', `${outputDir}/%(uploader)s - %(title)s.%(ext)s`,
         url
       ].filter(Boolean);
 
