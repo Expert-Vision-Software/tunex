@@ -4,3 +4,9 @@ node_modules/
 .github/
 *.log
 .env*
+output
+.serena
+.agents
+.opencode
+docs
+skills-lock.json
