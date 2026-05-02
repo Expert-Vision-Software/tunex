@@ -1,0 +1,4 @@
+services:
+  yt-dlp:
+    image: jauderho/yt-dlp:latest
+    build: ./docker

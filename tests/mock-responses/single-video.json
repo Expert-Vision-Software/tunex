@@ -1,0 +1,13 @@
+{
+  "id": "dQw4w9WgXcQ",
+  "title": "Never Gonna Give You Up",
+  "uploader": "Rick Astley",
+  "extractor": "youtube",
+  "extractor_key": "Youtube",
+  "webpage_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+  "duration": 212,
+  "width": 1920,
+  "height": 1080,
+  "ext": "mp4",
+  "format": "bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio"
+}

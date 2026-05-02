@@ -1,0 +1,28 @@
+{
+  "id": "PLrAXtmEr4O0F7C0C36p8KqR8bKQ8Z5x6y",
+  "title": "Example Playlist",
+  "webpage_url": "https://www.youtube.com/playlist?list=PLrAXtmEr4O0F7C0C36p8KqR8bKQ8Z5x6y",
+  "extractor": "youtube:playlist",
+  "extractor_key": "YoutubePlaylist",
+  "playlist": [
+    {
+      "id": "dQw4w9WgXcQ",
+      "title": "Never Gonna Give You Up",
+      "uploader": "Rick Astley",
+      "duration": 212,
+      "ext": "mp4"
+    },
+    {
+      "id": "abc123def456",
+      "title": "Another Song",
+      "uploader": "Test Artist",
+      "duration": 180,
+      "ext": "mp4"
+    }
+  ],
+  "playlist_count": 2,
+  "playlist_entries": [
+    {"id": "dQw4w9WgXcQ", "title": "Never Gonna Give You Up", "uploader": "Rick Astley"},
+    {"id": "abc123def456", "title": "Another Song", "uploader": "Test Artist"}
+  ]
+}

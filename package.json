@@ -1,0 +1,23 @@
+{
+  "name": "music-helper",
+  "type": "module",
+  "version": "0.9.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/expert-vision-software/opencode-architect.git"
+  },
+  "publisher": "Expert Vision Software",
+  "author": "Expert Vision Support <support@expertvision.software>",
+  "bugs": {
+    "url": "https://github.com/expert-vision-software/opencode-architect/issues",
+    "email": "support@expertvision.software"
+  },
+  "scripts": {
+    "start": "bun run src/main.ts",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@clack/prompts": "^0.7.0",
+    "dotenv": "^16.4.5"
+  }
+}
