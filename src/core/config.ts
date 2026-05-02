@@ -26,7 +26,7 @@ export const DEFAULT_CONFIG: Config = {
   logFile: null,
 };
 
-function getConfigPath(): string {
+export function getConfigPath(): string {
   const appName = getAppName();
   if (process.platform === 'win32') {
     return join(process.env.LOCALAPPDATA || join(homedir(), 'AppData', 'Local'), appName, 'config.json');

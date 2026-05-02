@@ -1,5 +1,5 @@
 import { select, text, confirm, isCancel } from '@clack/prompts';
-import { loadConfig, saveConfigFile, DEFAULT_CONFIG, loadConfigFile } from '../core/config.js';
+import { loadConfig, saveConfigFile, DEFAULT_CONFIG, loadConfigFile, getConfigPath } from '../core/config.js';
 import { parse } from 'dotenv';
 import { readFileSync, existsSync } from 'fs';
 import { normalizePathForDisplay } from '../core/paths.js';
@@ -46,6 +46,7 @@ export async function configMenu(): Promise<void> {
   switch (action) {
     case 'view':
       console.log('\nCurrent Config:');
+      console.log(`  Config File: ${getConfigPath()}`);
       console.log(`  defaultOutputDir: ${config.defaultOutputDir}`);
       console.log(`  defaultThreads: ${config.defaultThreads}`);
       console.log(`  logFile: ${config.logFile ?? '(none)'}`);
@@ -60,7 +61,7 @@ export async function configMenu(): Promise<void> {
       console.log('  Sources (highest to lowest precedence):');
       console.log('    1. CLI flags (passed at runtime)');
       console.log('    2. Environment variables (.env.local > .env)');
-      console.log('    3. Config file (~/.tunex/config.json)');
+      console.log(`    3. Config file (${getConfigPath()})`);
       console.log('    4. Factory defaults (DEFAULT_CONFIG)');
       console.log('');
       console.log('  Current Values:');

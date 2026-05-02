@@ -1,5 +1,5 @@
 import { ensureConfigDir, loadConfig } from './core/config.js';
-import { APP_NAME } from './constants.js';
+import { APP_NAME, APP_VERSION } from './constants.js';
 
 interface CliFlags {
   input?: string;
@@ -18,7 +18,11 @@ function parseCliFlags(): CliFlags {
   
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
-    if (arg === '--input' || arg === '-i') {
+    if (arg === '--help' || arg === '-h' || arg === 'help') {
+      flags.command = 'help';
+    } else if (arg === '--version' || arg === '-v' || arg === 'version') {
+      flags.command = 'version';
+    } else if (arg === '--input' || arg === '-i') {
       flags.input = args[++i];
     } else if (arg === '--output-dir' || arg === '-o') {
       flags.outputDir = args[++i];
@@ -65,6 +69,10 @@ async function runDirect(flags: CliFlags) {
 
   const command = getCommand(flags.command!);
   if (!command) {
+    if (flags.command === 'help' || flags.command === 'version') {
+      handleMetaCommand(flags.command);
+      return;
+    }
     console.error('Unknown command: ' + flags.command);
     console.error('Run without arguments for interactive mode.');
     process.exit(1);
@@ -114,11 +122,46 @@ async function runDirect(flags: CliFlags) {
   }
 }
 
+function printHelp(): void {
+  console.log(`${APP_NAME} v${APP_VERSION} - Media Utility Suite\n`);
+  console.log('Usage:');
+  console.log('  bunx tunex              Start interactive mode');
+  console.log('  bunx tunex help        Show this help message');
+  console.log('  bunx tunex version     Show version information');
+  console.log('  bunx tunex config      Open configuration menu');
+  console.log('  bunx tunex run <cmd>   Run a command directly\n');
+  console.log('Commands:');
+  console.log('  bulk-audio-extract     Extract audio from local video files');
+  console.log('  yt-audio-only          Download YouTube audio as MP3');
+  console.log('  yt-video-mp4           Download YouTube video as MP4\n');
+  console.log('Options:');
+  console.log('  -i, --input <path>     Input URL or local path');
+  console.log('  -o, --output-dir <dir> Output directory');
+  console.log('  -t, --threads <n>       Number of threads (max 4)');
+  console.log('  --flatten              Flatten output directory structure');
+  console.log('  --stop-on-error        Stop on first error');
+  console.log('  --log-file <path>      Log file path');
+  console.log('\nExamples:');
+  console.log('  bunx tunex                                          # Interactive mode');
+  console.log('  bunx tunex run bulk-audio-extract -i ./videos       # Direct command');
+  console.log('  bunx tunex config                                    # Config menu');
+}
+
+function handleMetaCommand(command: string): void {
+  if (command === 'help') {
+    printHelp();
+  } else if (command === 'version') {
+    console.log(`${APP_NAME} v${APP_VERSION}`);
+  }
+}
+
 ensureConfigDir();
 
 const flags = parseCliFlags();
 
-if (flags.command === 'config') {
+if (flags.command === 'help' || flags.command === 'version') {
+  handleMetaCommand(flags.command);
+} else if (flags.command === 'config') {
   runConfig();
 } else if (flags.command === 'run' && flags.subcommand) {
   runDirect({ ...flags, command: flags.subcommand });
