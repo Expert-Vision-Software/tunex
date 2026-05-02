@@ -41,9 +41,9 @@ export async function mainMenu(): Promise<void> {
   }
 
   const input = await group({
-    input: text({ label: 'Input URL(s)' }),
-    outputDir: text({ label: 'Output Directory', initial: './output' }),
-    threads: text({ label: 'Threads', initial: '4' }),
+    input: () => text({ message: 'Input URL(s)' }),
+    outputDir: () => text({ message: 'Output Directory', initial: './output' }),
+    threads: () => text({ message: 'Threads', initial: '4' }),
   });
 
   const threads = parseInt(input.threads as string, 10) || 4;

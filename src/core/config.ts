@@ -1,5 +1,3 @@
-import { existsSync } from 'bun';
-
 interface Config {
   defaultThreads: number;
   defaultOutputDir: string;
@@ -10,11 +8,15 @@ const MAX_THREADS = 4;
 
 function parseEnvFile(envPath: string): Record<string, string> {
   const result: Record<string, string> = {};
-  if (!existsSync(envPath)) {
+  let content: string | null;
+  try {
+    content = Bun.readFile(envPath);
+  } catch {
     return result;
   }
-
-  const content = Bun.file(envPath).text();
+  if (!content) {
+    return result;
+  }
   for (const line of content.split('\n')) {
     const trimmed = line.trim();
     if (!trimmed || trimmed.startsWith('#')) continue;

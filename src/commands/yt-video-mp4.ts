@@ -14,7 +14,7 @@ export const ytVideoMp4: YtubeCommand = {
       const args = [
         '-f', 'bestaudio[ext=m4a]+worstvideo[height>=720]/bestaudio+bestvideo',
         '--merge-output-format', 'mp4',
-        '--no-playlist-automerge',
+        '--no-playlist',
         continueFlag,
         '-o', `${outputDir}/%(uploader)s - %(title)s.%(ext)s`,
         url

@@ -15,7 +15,7 @@ export const bulkAudioExtract: YtubeCommand = {
         '--extract-audio',
         '--audio-format', 'mp3',
         '--audio-quality', '128k',
-        '--no-playlist-automerge',
+        '--no-playlist',
         continueFlag,
         '-o', `${outputDir}/%(title)s.%(ext)s`,
         `/downloads/${folder}/`

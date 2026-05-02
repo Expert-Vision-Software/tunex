@@ -1,9 +1,14 @@
 export type Shell = 'pwsh' | 'powershell' | 'bash';
 
 export async function platformExec(cmd: string, shell: Shell): Promise<void> {
-  const proc = shell === 'bash'
-    ? Bun.spawn(['bash', '-c', cmd], { stdout: 'inherit', stderr: 'inherit' })
-    : Bun.spawn([cmd], { shell: true, stdout: 'inherit', stderr: 'inherit' });
+  let proc;
+  if (shell === 'bash') {
+    proc = Bun.spawn(['bash', '-c', cmd], { stdout: 'inherit', stderr: 'inherit' });
+  } else if (shell === 'pwsh') {
+    proc = Bun.spawn(['pwsh.exe', '-NoProfile', '-Command', cmd], { stdout: 'inherit', stderr: 'inherit' });
+  } else {
+    proc = Bun.spawn(['powershell.exe', '-NoProfile', '-Command', cmd], { stdout: 'inherit', stderr: 'inherit' });
+  }
 
   const exitCode = await proc.exited;
   if (exitCode !== 0) {
