@@ -11,6 +11,12 @@ interface Config {
 
 const MAX_THREADS = 4;
 
+export const DEFAULT_CONFIG: Config = {
+  defaultThreads: 2,
+  defaultOutputDir: '.',
+  logFile: null,
+};
+
 function getAppName(): string {
   const pkg = JSON.parse(readFileSync('./package.json', 'utf-8'));
   return pkg.name;
@@ -24,25 +30,28 @@ function getConfigPath(): string {
   return join(homedir(), '.' + appName, 'config.json');
 }
 
-function ensureConfigDir(): void {
+export function ensureConfigDir(): void {
   const dir = dirname(getConfigPath());
   if (!existsSync(dir)) {
     mkdirSync(dir, { recursive: true });
   }
+  if (!existsSync(getConfigPath())) {
+    saveConfigFile(DEFAULT_CONFIG);
+  }
 }
 
-function loadConfigFile(): Partial<Config> | null {
+export function loadConfigFile(): Partial<Config> | null {
   const path = getConfigPath();
   if (existsSync(path)) {
     try {
       return JSON.parse(readFileSync(path, 'utf-8'));
     } catch { }
   }
+  
   return null;
 }
 
 export function saveConfigFile(config: Config): void {
-  ensureConfigDir();
   writeFileSync(getConfigPath(), JSON.stringify(config, null, 2));
 }
 
@@ -64,13 +73,13 @@ export function loadConfig(): Config {
   const envConfig = loadEnvFiles();
 
   const defaultThreads = Math.min(
-    parseInt(envConfig.DEFAULT_THREADS ?? fileConfig.defaultThreads?.toString() ?? '2', 10) || 2,
+    parseInt(envConfig.DEFAULT_THREADS ?? fileConfig.defaultThreads?.toString(), 10) || DEFAULT_CONFIG.defaultThreads,
     MAX_THREADS
   );
 
   return {
     defaultThreads,
-    defaultOutputDir: envConfig.DEFAULT_OUTPUT_DIR ?? fileConfig.defaultOutputDir ?? '.',
-    logFile: envConfig.LOG_FILE ?? fileConfig.logFile ?? null,
+    defaultOutputDir: envConfig.DEFAULT_OUTPUT_DIR ?? fileConfig.defaultOutputDir ?? DEFAULT_CONFIG.defaultOutputDir,
+    logFile: envConfig.LOG_FILE ?? fileConfig.logFile ?? DEFAULT_CONFIG.logFile,
   };
 }

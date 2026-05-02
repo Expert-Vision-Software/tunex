@@ -1,15 +1,16 @@
-import { executeDocker } from '../core/executor';
-import { sanitizeFilename } from '../utils/sanitize';
+import { executeDocker } from '../core/executor.js';
+import { sanitizeFilename } from '../utils/sanitize.js';
 import { readdirSync, renameSync } from 'bun';
-import type { YtubeCommand, CommandOptions } from './types';
-import { getWorkingDirForDocker, buildVolumeMount } from '../core/paths';
+import type { YtubeCommand, CommandOptions } from './types.js';
+import { getWorkingDirForDocker, buildVolumeMount } from '../core/paths.js';
+import { DEFAULT_CONFIG } from '../core/config.js';
 
 export const ytAudioOnly: YtubeCommand = {
   name: 'yt-audio-only',
   description: 'Download YouTube video/playlist as audio-only MP3',
   async execute(opts: CommandOptions): Promise<void> {
     const input = Array.isArray(opts.input) ? opts.input : [opts.input];
-    const outputDir = opts.outputDir || '.';
+    const outputDir = opts.outputDir || DEFAULT_CONFIG.defaultOutputDir;
     const continueFlag = opts.continueOnError ? ['--continue', '--no-abort-on-error'] : [];
     const workingDir = getWorkingDirForDocker();
 

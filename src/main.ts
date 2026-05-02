@@ -1,3 +1,5 @@
+import { ensureConfigDir } from './core/config.js';
+
 interface CliFlags {
   input?: string;
   outputDir?: string;
@@ -109,6 +111,8 @@ async function runDirect(flags: CliFlags) {
     printCLIRecommendation(command.name, opts);
   }
 }
+
+ensureConfigDir();
 
 const flags = parseCliFlags();
 
