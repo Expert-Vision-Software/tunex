@@ -9,7 +9,7 @@ Cross-platform CLI for downloading YouTube/Spotify content, extracting audio, an
 ## Install
 
 ```bash
-bunx tunex
+bun install tunex -g
 ```
 
 ## Overview

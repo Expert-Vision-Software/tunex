@@ -18,6 +18,7 @@
   },
   "publisher": "Expert Vision Software",
   "author": "Expert Vision Support <support@expertvision.software>",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/expert-vision-software/tunex/issues",
     "email": "support@expertvision.software"
