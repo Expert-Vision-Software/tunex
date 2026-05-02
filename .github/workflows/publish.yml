@@ -39,6 +39,7 @@ jobs:
       - name: Publish to npm
         if: steps.check.outputs.exists == 'false'
         run: |
+          echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
           if [ -n "$VERSION" ]; then
             bun run build
           fi
