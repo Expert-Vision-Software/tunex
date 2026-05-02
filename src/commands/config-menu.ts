@@ -3,6 +3,8 @@ import { loadConfig, saveConfigFile, DEFAULT_CONFIG, loadConfigFile } from '../c
 import { parse } from 'dotenv';
 import { readFileSync, existsSync } from 'fs';
 import type { Config } from '../core/config.js';
+import { normalizePathForDisplay } from '../core/paths.js';
+import { getPlatformInfo } from '../core/platform.js';
 
 function loadEnvFiles(): Record<string, string> {
   const result: Record<string, string> = {};
@@ -52,6 +54,7 @@ export async function configMenu(): Promise<void> {
     case 'resolved': {
       const fileConfig = loadConfigFile() || {};
       const envConfig = loadEnvFiles();
+      const platform = getPlatformInfo();
       console.log('\nResolved Config (with override precedence):');
       console.log('');
       console.log('  Sources (highest to lowest precedence):');
@@ -61,7 +64,7 @@ export async function configMenu(): Promise<void> {
       console.log('    4. Factory defaults (DEFAULT_CONFIG)');
       console.log('');
       console.log('  Current Values:');
-      console.log(`    defaultOutputDir: ${config.defaultOutputDir}`);
+      console.log(`    defaultOutputDir: ${normalizePathForDisplay(config.defaultOutputDir, platform.platform)}`);
       if (envConfig.DEFAULT_OUTPUT_DIR) {
         console.log(`      └── env override: DEFAULT_OUTPUT_DIR="${envConfig.DEFAULT_OUTPUT_DIR}"`);
       }
@@ -69,7 +72,7 @@ export async function configMenu(): Promise<void> {
       if (envConfig.DEFAULT_THREADS) {
         console.log(`      └── env override: DEFAULT_THREADS="${envConfig.DEFAULT_THREADS}"`);
       }
-      console.log(`    logFile: ${config.logFile ?? '(none)'}`);
+      console.log(`    logFile: ${config.logFile ? normalizePathForDisplay(config.logFile, platform.platform) : '(none)'}`);
       if (envConfig.LOG_FILE) {
         console.log(`      └── env override: LOG_FILE="${envConfig.LOG_FILE}"`);
       }

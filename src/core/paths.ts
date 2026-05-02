@@ -147,6 +147,58 @@ export function getPathPlaceholder(platform: ExecutionPlatform): string {
   }
 }
 
+export function normalizePathForDisplay(path: string, execPlatform?: ExecutionPlatform): string {
+  const platform = execPlatform ?? getPlatformInfo().platform;
+  const trimmed = path.trim();
+
+  if (!trimmed) {
+    return trimmed;
+  }
+
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    return trimmed;
+  }
+
+  if (/^[a-zA-Z]:[\\\/]/.test(trimmed)) {
+    const normalized = trimmed.replace(/\\/g, '/');
+    if (platform === 'wsl') {
+      return convertWindowsToWSLPath(normalized);
+    }
+    if (platform === 'linux') {
+      return normalized.replace(/^([A-Za-z]):/, '/$1');
+    }
+    return normalized;
+  }
+
+  if (platform === 'windows' && (trimmed.startsWith('/mnt/') || trimmed.startsWith('~/'))) {
+    return convertWSLToWindowsPath(trimmed);
+  }
+
+  if (trimmed === '.' || trimmed.startsWith('./') || trimmed.startsWith('../')) {
+    const cwd = process.cwd().replace(/\\/g, '/');
+    const normalized = trimmed.replace(/^\.\//, '');
+    return `${cwd}/${normalized}`;
+  }
+
+  if (!trimmed.includes('/')) {
+    const cwd = process.cwd().replace(/\\/g, '/');
+    return `${cwd}/${trimmed}`;
+  }
+
+  return trimmed;
+}
+
+function convertWindowsToWSLPath(windowsPath: string): string {
+  const normalized = windowsPath.replace(/\\/g, '/');
+  const match = normalized.match(/^([A-Za-z]):\/(.*)/);
+  if (match) {
+    const drive = match[1].toLowerCase();
+    const rest = match[2];
+    return `/mnt/${drive}/${rest}`;
+  }
+  return normalized;
+}
+
 export function getWorkingDirForDocker(): string {
   const platform = getPlatformInfo();
   const cwd = process.cwd().replace(/\\/g, '/');

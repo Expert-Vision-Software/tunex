@@ -47,3 +47,10 @@ tests/fixtures/               # Mock yt-dlp JSON + sample video files
 ## PRD
 
 See `docs/PRD.md` for full specification (note: PRD still references original `ytube-utils` name)
+
+## Testing
+
+See `docs/testing-protocol.md` for threshold-based test execution and baseline management.
+
+Run tests: `bun test`
+Mock mode: `MOCK_DOCKER=true bun run src/main.ts <command>`
