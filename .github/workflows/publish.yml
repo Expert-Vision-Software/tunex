@@ -15,8 +15,6 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
     permissions:
       contents: read
       id-token: write
@@ -46,7 +44,7 @@ jobs:
           fi
           npm publish --provenance --access public
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           VERSION: ${{ github.event.inputs.version }}
 
       - name: Create GitHub Release
