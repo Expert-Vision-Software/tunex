@@ -52,16 +52,17 @@ export async function mainMenu(): Promise<void> {
     message: `Run "${selected}" with these settings?`,
   });
 
-  if (shouldRun) {
-    const opts: CommandOptions = {
-      input: input.input,
-      outputDir: input.outputDir,
-      threads,
-    };
+  const opts: CommandOptions = {
+    input: input.input,
+    outputDir: input.outputDir,
+    threads,
+  };
 
+  if (shouldRun) {
     await command.execute(opts);
-    printCLIRecommendation(selected, opts);
   }
+
+  printCLIRecommendation(selected, opts);
 }
 
 export function printCLIRecommendation(commandName: string, opts: CommandOptions): void {

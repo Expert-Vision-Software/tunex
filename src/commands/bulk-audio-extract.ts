@@ -9,7 +9,7 @@ export const bulkAudioExtract: YtubeCommand = {
   async execute(opts: CommandOptions): Promise<void> {
     const input = Array.isArray(opts.input) ? opts.input : [opts.input];
     const outputDir = opts.outputDir || '.';
-    const continueFlag = opts.continueOnError ? '--continue --no-abort-on-error' : '';
+    const continueFlag = opts.continueOnError ? ['--continue', '--no-abort-on-error'] : [];
 
     for (const folder of input) {
       const volumeMount = `${process.cwd().replace(/\\/g, '/')}:/downloads`;
@@ -18,7 +18,7 @@ export const bulkAudioExtract: YtubeCommand = {
         '--audio-format', 'mp3',
         '--audio-quality', '0',
         '--no-playlist',
-        continueFlag,
+        ...continueFlag,
         '-o', `${outputDir}/%(title)s.%(ext)s`,
         `/downloads/${folder}/`
       ].filter(Boolean);

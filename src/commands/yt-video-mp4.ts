@@ -9,7 +9,7 @@ export const ytVideoMp4: YtubeCommand = {
   async execute(opts: CommandOptions): Promise<void> {
     const input = Array.isArray(opts.input) ? opts.input : [opts.input];
     const outputDir = opts.outputDir || '.';
-    const continueFlag = opts.continueOnError ? '--continue --no-abort-on-error' : '';
+    const continueFlag = opts.continueOnError ? ['--continue', '--no-abort-on-error'] : [];
 
     for (const url of input) {
       const volumeMount = `${process.cwd().replace(/\\/g, '/')}:/downloads`;
@@ -17,7 +17,7 @@ export const ytVideoMp4: YtubeCommand = {
         '-f', 'bestaudio[ext=m4a]+worstvideo[height>=720]/bestaudio+bestvideo',
         '--merge-output-format', 'mp4',
         '--no-playlist',
-        continueFlag,
+        ...continueFlag,
         '-o', `${outputDir}/%(uploader)s - %(title)s.%(ext)s`,
         url
       ].filter(Boolean);
