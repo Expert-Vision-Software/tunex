@@ -63,16 +63,24 @@ export async function configMenu(): Promise<void> {
       console.log('  Current Values:');
       console.log(`    defaultOutputDir: ${config.defaultOutputDir}`);
       if (envConfig.DEFAULT_OUTPUT_DIR) {
-        console.log(`      └── overridden by env: DEFAULT_OUTPUT_DIR="${envConfig.DEFAULT_OUTPUT_DIR}"`);
+        console.log(`      └── env override: DEFAULT_OUTPUT_DIR="${envConfig.DEFAULT_OUTPUT_DIR}"`);
       }
       console.log(`    defaultThreads: ${config.defaultThreads}`);
       if (envConfig.DEFAULT_THREADS) {
-        console.log(`      └── overridden by env: DEFAULT_THREADS="${envConfig.DEFAULT_THREADS}"`);
+        console.log(`      └── env override: DEFAULT_THREADS="${envConfig.DEFAULT_THREADS}"`);
       }
       console.log(`    logFile: ${config.logFile ?? '(none)'}`);
       if (envConfig.LOG_FILE) {
-        console.log(`      └── overridden by env: LOG_FILE="${envConfig.LOG_FILE}"`);
+        console.log(`      └── env override: LOG_FILE="${envConfig.LOG_FILE}"`);
       }
+      console.log('');
+      console.log('  .env file:');
+      const envContent = existsSync('.env') ? readFileSync('.env', 'utf-8') : '(not found)';
+      console.log(`    ${envContent.replace(/\n/g, '\n    ')}`);
+      console.log('');
+      console.log('  .env.local file:');
+      const localContent = existsSync('.env.local') ? readFileSync('.env.local', 'utf-8') : '(not found)';
+      console.log(`    ${localContent.replace(/\n/g, '\n    ')}`);
       console.log('');
       console.log('  Config File Contents:');
       console.log(`    ${JSON.stringify(fileConfig, null, 2).replace(/\n/g, '\n    ')}`);
