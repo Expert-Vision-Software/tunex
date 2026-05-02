@@ -3,7 +3,7 @@ interface CliFlags {
   outputDir?: string;
   threads?: number;
   flatten?: boolean;
-  noContinue?: boolean;
+  stopOnError?: boolean;
   logFile?: string;
   command?: string;
 }
@@ -18,11 +18,13 @@ function parseCliFlags(): CliFlags {
       flags.input = args[++i];
     } else if (arg === '--output-dir' || arg === '-o') {
       flags.outputDir = args[++i];
-    } else if (arg === '--threads' || arg === '-t') {
+} else if (arg === '--threads' || arg === '-t') {
       flags.threads = parseInt(args[++i], 10);
     } else if (arg === '--flatten') {
       flags.flatten = true;
-} else if (arg === '--log-file') {
+    } else if (arg === '--stop-on-error') {
+      flags.stopOnError = true;
+    } else if (arg === '--log-file') {
       flags.logFile = args[++i];
     } else if (!arg.startsWith('-')) {
       flags.command = arg;
@@ -63,7 +65,7 @@ async function runDirect(flags: CliFlags) {
     input: flags.input,
     outputDir: flags.outputDir ?? config.defaultOutputDir,
     threads: Math.min(flags.threads ?? config.defaultThreads, 4),
-    continueOnError: !flags.noContinue,
+    continueOnError: !flags.stopOnError,
     flatten: flags.flatten,
   };
 

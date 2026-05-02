@@ -93,6 +93,7 @@ export async function mainMenu(): Promise<void> {
     input: inputUrl,
     outputDir: input.outputDir,
     threads,
+    continueOnError: true,
   };
 
   if (shouldRun) {
