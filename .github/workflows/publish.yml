@@ -15,6 +15,8 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
     permissions:
       contents: read
       id-token: write
@@ -27,11 +29,11 @@ jobs:
           node-version: 'lts/*'
           registry-url: 'https://registry.npmjs.org'
 
-      - run: npm ci
+      - run: bun install
 
       - run: |
           if [ -n "$VERSION" ]; then
-            npm version $VERSION
+            bun run build
           fi
           npm publish --provenance --access public
         env:
