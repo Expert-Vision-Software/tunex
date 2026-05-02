@@ -1,5 +1,5 @@
 {
-  "name": "tunex",
+  "name": "@expert-vision-software/tunex",
   "type": "module",
   "version": "0.9.3",
   "description": "Cross-platform CLI for downloading YouTube/Spotify content and managing local media — audio extraction, metadata tagging, and intelligent file matching via LLM inference.",
