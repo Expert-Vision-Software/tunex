@@ -18,6 +18,10 @@ export function parseLocalPath(input: string, execPlatform?: ExecutionPlatform):
     return null;
   }
 
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    return null;
+  }
+
   if (/^[a-zA-Z]:[\\\/]/.test(trimmed)) {
     return parseWindowsPath(trimmed);
   }
@@ -109,7 +113,7 @@ export function isValidLocalPath(input: string, execPlatform?: ExecutionPlatform
 
     switch (platform) {
       case 'windows':
-        return parsed.type === 'windows';
+        return ['windows', 'unix-relative', 'unix-native'].includes(parsed.type);
       case 'wsl':
         return ['wsl-host', 'wsl-native', 'unix-relative'].includes(parsed.type);
       case 'linux':

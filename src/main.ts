@@ -6,6 +6,7 @@ interface CliFlags {
   stopOnError?: boolean;
   logFile?: string;
   command?: string;
+  subcommand?: string;
 }
 
 function parseCliFlags(): CliFlags {
@@ -18,7 +19,7 @@ function parseCliFlags(): CliFlags {
       flags.input = args[++i];
     } else if (arg === '--output-dir' || arg === '-o') {
       flags.outputDir = args[++i];
-} else if (arg === '--threads' || arg === '-t') {
+    } else if (arg === '--threads' || arg === '-t') {
       flags.threads = parseInt(args[++i], 10);
     } else if (arg === '--flatten') {
       flags.flatten = true;
@@ -26,8 +27,12 @@ function parseCliFlags(): CliFlags {
       flags.stopOnError = true;
     } else if (arg === '--log-file') {
       flags.logFile = args[++i];
-    } else if (!arg.startsWith('-')) {
+    } else if (arg === 'run' || arg === 'start' || arg === 'config') {
       flags.command = arg;
+    } else if (!arg.startsWith('-') && !flags.command) {
+      flags.command = arg;
+    } else if (!arg.startsWith('-') && flags.command === 'run') {
+      flags.subcommand = arg;
     }
   }
   
@@ -107,8 +112,19 @@ async function runDirect(flags: CliFlags) {
 
 const flags = parseCliFlags();
 
-if (flags.command) {
+if (flags.command === 'config') {
+  runConfig();
+} else if (flags.command === 'run' && flags.subcommand) {
+  runDirect({ ...flags, command: flags.subcommand });
+} else if (flags.command === 'start' || flags.command === 'run') {
+  runInteractive();
+} else if (flags.command) {
   runDirect(flags);
 } else {
   runInteractive();
+}
+
+async function runConfig() {
+  const { configMenu } = await import('./commands/config-menu.js');
+  await configMenu();
 }
