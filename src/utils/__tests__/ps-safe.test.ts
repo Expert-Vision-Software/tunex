@@ -46,7 +46,7 @@ describe('psEscapePathForDocker', () => {
 describe('buildDockerCommand', () => {
   test('builds correct command for simple args', () => {
     const cmd = buildDockerCommand('/downloads', ['--version']);
-    expect(cmd).toBe('docker run -i --rm -v /downloads jauderho/yt-dlp:latest --version');
+    expect(cmd).toBe('docker run --rm -v /downloads jauderho/yt-dlp:latest --version');
   });
 
   test('builds correct command with complex output pattern', () => {
@@ -55,6 +55,6 @@ describe('buildDockerCommand', () => {
       '-o', '%(uploader)s - %(title)s.%(ext)s',
       'https://youtube.com/watch?v=abc'
     ]);
-    expect(cmd).toBe("docker run -i --rm -v /downloads jauderho/yt-dlp:latest -f bestaudio -o '%(uploader)s - %(title)s.%(ext)s' 'https://youtube.com/watch?v=abc'");
+    expect(cmd).toBe("docker run --rm -v /downloads jauderho/yt-dlp:latest -f bestaudio -o '%(uploader)s - %(title)s.%(ext)s' 'https://youtube.com/watch?v=abc'");
   });
 });

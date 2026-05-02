@@ -64,12 +64,14 @@ function rewriteOutputPath(volumeMount: string, ytDlpArgs: string[]): { finalVol
 
       if (process.platform === 'win32') {
         const hostWorking = process.cwd().replace(/\//g, '\\');
-        return { finalVolumeMount: `${hostWorking}\\:\\downloads|${hostWorking}\\${subdir}:/target`, finalArgs: ytDlpArgs };
+        const finalArgs = [...ytDlpArgs];
+        finalArgs[outputIdx + 1] = `/target/${filename}`;
+        return { finalVolumeMount: `${hostWorking}\\:/downloads|${hostWorking}\\${subdir}:/target`, finalArgs };
       }
 
       const newVolumeMount = `${workingDir}:/downloads,${workingDir}/${subdir}:/target`;
       const finalArgs = [...ytDlpArgs];
-      finalArgs[outputIdx + 1] = `./${subdir}/${filename}`;
+      finalArgs[outputIdx + 1] = `/target/${filename}`;
       return { finalVolumeMount: newVolumeMount, finalArgs };
     }
   }

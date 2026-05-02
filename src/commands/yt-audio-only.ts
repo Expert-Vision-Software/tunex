@@ -18,9 +18,10 @@ export const ytAudioOnly: YtubeCommand = {
         '--extract-audio',
         '--audio-format', 'mp3',
         '--audio-quality', '0',
+        '--restrict-filenames',
         '--no-playlist',
         ...continueFlag,
-        '-o', `${outputDir}/%(uploader)s - %(title)s.%(ext)s`,
+        '-o', `./output/%(uploader)s - %(title)s.%(ext)s`,
         url
       ].filter(Boolean);
 
@@ -36,9 +37,11 @@ function sanitizeDownloadedFiles(outputDir: string): void {
   try {
     const files = readdirSync(outputDir);
     for (const file of files) {
-      if (!file.includes('/') && !file.includes('\\') && !file.includes(':') &&
-          !file.includes('*') && !file.includes('?') && !file.includes('"') &&
-          !file.includes('<') && !file.includes('>') && !file.includes('|')) {
+      const needsSanitize = file.includes('/') || file.includes('\\') || file.includes(':') ||
+        file.includes('*') || file.includes('?') || file.includes('"') ||
+        file.includes('<') || file.includes('>') || file.includes('|') ||
+        /[^\x00-\x7F]/.test(file);
+      if (!needsSanitize) {
         continue;
       }
       const sanitized = sanitizeFilename(file);
