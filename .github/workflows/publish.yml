@@ -5,6 +5,12 @@ on:
       - 'v*'
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (e.g., 1.0.0)'
+        required: false
+        type: string
 
 jobs:
   publish:
@@ -23,6 +29,11 @@ jobs:
 
       - run: npm ci
 
-      - run: npm publish --provenance --access public
+      - run: |
+          if [ -n "$VERSION" ]; then
+            npm version $VERSION
+          fi
+          npm publish --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          VERSION: ${{ github.event.inputs.version }}
