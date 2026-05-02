@@ -1,4 +1,4 @@
-import { ensureConfigDir } from './core/config.js';
+import { ensureConfigDir, loadConfig } from './core/config.js';
 
 interface CliFlags {
   input?: string;
@@ -46,8 +46,9 @@ async function runInteractive() {
   const { getPlatformInfo } = await import('./core/platform.js');
   const { createLogger } = await import('./utils/logger.js');
 
+  const config = loadConfig();
   const platform = getPlatformInfo();
-  const logger = createLogger();
+  const logger = createLogger({ logFile: config.logFile });
   logger.info('Platform: ' + platform.platform + ' | Shell: ' + platform.shell + ' | Docker: ' + (platform.hasDocker ? 'available' : 'not found'));
 
   await mainMenu();
