@@ -29,9 +29,14 @@ describe('psEscapeArg', () => {
 });
 
 describe('psEscapePathForDocker', () => {
-  test('passes through simple paths', () => {
+  test('passes through simple unix paths', () => {
     expect(psEscapePathForDocker('/downloads')).toBe('/downloads');
-    expect(psEscapePathForDocker('C:/dev/project')).toBe('C:/dev/project');
+  });
+
+  test('escapes windows drive-letter paths (colon in drive)', () => {
+    // C:/dev/project contains ':' — PowerShell interprets C: as path separator
+    expect(psEscapePathForDocker('C:/dev/project')).toBe("'C:/dev/project'");
+    expect(psEscapePathForDocker('D:/Videos/music')).toBe("'D:/Videos/music'");
   });
 
   test('escapes paths with spaces', () => {
