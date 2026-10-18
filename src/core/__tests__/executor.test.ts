@@ -138,4 +138,22 @@ describe("rewriteOutputPath", () => {
     );
     expect(result.finalArgs[1]).toBe("/target/my-video.%(ext)s");
   });
+
+  test("rewrites absolute Linux output path to /target on WSL+Windows Docker", () => {
+    const wslWindowsPlatform = {
+      platform: 'wsl' as const,
+      shell: 'bash' as const,
+      dockerContext: 'windows' as const,
+      isWSL: true,
+      hasDocker: true,
+    };
+    const result = rewriteOutputPath(
+      "/mnt/d/project:/downloads",
+      ["-o", "/tmp/output/test.mp3", "url"],
+      wslWindowsPlatform
+    );
+    expect(result.finalArgs[1]).toBe("/target/test.mp3");
+    expect(result.finalVolumeMount).toContain("|");
+    expect(result.finalVolumeMount).toContain("/target");
+  });
 });

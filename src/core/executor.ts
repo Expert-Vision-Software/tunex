@@ -107,6 +107,24 @@ export function rewriteOutputPath(
       finalArgs[outputIdx + 1] = `/target/${filename}`;
       return { finalVolumeMount: `${hostWorking}:/downloads|${targetDir}:/target`, finalArgs };
     }
+
+    // Fallback for absolute Linux paths (e.g. /tmp/output/file.mp3) when
+    // parseLocalPath returns null. Convert the parent directory to the
+    // Docker Desktop bind mount path and add as a second volume.
+    if (normalizedOutput.startsWith('/')) {
+      const parts = normalizedOutput.split('/');
+      if (parts.length > 2) {
+        const filename = parts[parts.length - 1];
+        const parentDir = '/' + parts.slice(1, -1).join('/');
+        const workingDir = process.cwd().replace(/\\/g, '/');
+        const hostWorking = convertWSLToWindowsPath(workingDir);
+        const hostParent = convertWSLToWindowsPath(parentDir);
+
+        const finalArgs = [...ytDlpArgs];
+        finalArgs[outputIdx + 1] = `/target/${filename}`;
+        return { finalVolumeMount: `${hostWorking}:/downloads|${hostParent}:/target`, finalArgs };
+      }
+    }
   }
 
   return { finalVolumeMount: volumeMount, finalArgs: ytDlpArgs };
