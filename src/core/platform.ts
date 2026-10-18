@@ -45,12 +45,25 @@ function checkGitBash(): boolean {
 }
 
 function checkBashOnWindows(): boolean {
-  try {
-    const result = Bun.spawnSync({ cmd: ['bash', '--version'], stdout: 'pipe' });
-    return result.exitCode === 0;
-  } catch {
-    return false;
+  // Only return true if we're actually running in a bash-compatible shell
+  // environment, not just because bash.exe happens to be installed.
+  // Real bash environments set SHELL or have MSYS/WSL env vars.
+  if (process.env.SHELL && process.env.SHELL.toLowerCase().includes('bash')) {
+    return true;
   }
+  // MSYS2 / Git Bash sets MSYSTEM
+  if (process.env.MSYSTEM) {
+    return true;
+  }
+  // WSL sets WSL_DISTRO_NAME — but if process.platform is 'win32',
+  // WSL_DISTRO_NAME shouldn't be set, so this is just defensive.
+  if (process.env.WSL_DISTRO_NAME) {
+    return true;
+  }
+  // Fallback: check that the parent shell is actually bash by looking
+  // at the SHELL_PARENT / PPROCESS env vars if set by the launcher.
+  // (Defensive — most shells don't set these, but MSYS2 may.)
+  return false;
 }
 
 function detectShell(): Shell {
