@@ -16,12 +16,12 @@ export function psEscapePathForDocker(path: string): string {
 export function buildDockerCommand(volumeMount: string, ytDlpArgs: string[]): string {
   const escapedArgs = ytDlpArgs.map(psEscapeArg);
 
-  if (volumeMount.includes('|')) {
-    const volumes = volumeMount.split('|');
-    const volumeFlags = volumes.map(v => `-v ${psEscapePathForDocker(v)}`).join(' ');
-    return `docker run --rm ${volumeFlags} jauderho/yt-dlp:latest ${escapedArgs.join(' ')}`;
-  }
-
-  const escapedVolume = psEscapePathForDocker(volumeMount);
-  return `docker run --rm -v ${escapedVolume} jauderho/yt-dlp:latest ${escapedArgs.join(' ')}`;
+  // Split on '|' (pipe) or ',' (comma) — executor.ts uses '|' for WSL path
+  // rewriting and ',' for Windows path rewriting. Both must be split so each
+  // volume spec gets its own -v flag, otherwise bash/PowerShell will treat
+  // the separator as a word boundary and pass multiple -v arguments.
+  const separator = volumeMount.includes('|') ? '|' : ',';
+  const volumes = volumeMount.split(separator);
+  const volumeFlags = volumes.map(v => `-v ${psEscapePathForDocker(v)}`).join(' ');
+  return `docker run --rm ${volumeFlags} jauderho/yt-dlp:latest ${escapedArgs.join(' ')}`;
 }

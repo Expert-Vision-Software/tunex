@@ -58,8 +58,20 @@ describe('buildDockerCommand', () => {
     const cmd = buildDockerCommand('/downloads', [
       '-f', 'bestaudio',
       '-o', '%(uploader)s - %(title)s.%(ext)s',
-      'https://youtube.com/watch?v=abc'
+      'https://www.youtube.com/watch?v=abc'
     ]);
-    expect(cmd).toBe("docker run --rm -v /downloads jauderho/yt-dlp:latest -f bestaudio -o '%(uploader)s - %(title)s.%(ext)s' 'https://youtube.com/watch?v=abc'");
+    expect(cmd).toBe("docker run --rm -v /downloads jauderho/yt-dlp:latest -f bestaudio -o '%(uploader)s - %(title)s.%(ext)s' 'https://www.youtube.com/watch?v=abc'");
+  });
+
+  test('splits comma-separated volumes and emits separate -v flags (Windows multi-volume)', () => {
+    // executor.ts uses ',' as separator for Windows volumes; each must get its own -v
+    const cmd = buildDockerCommand('C:/Users/diego:/downloads,C:/Media/Music/ytube:/target', ['--version']);
+    expect(cmd).toBe("docker run --rm -v 'C:/Users/diego:/downloads' -v 'C:/Media/Music/ytube:/target' jauderho/yt-dlp:latest --version");
+  });
+
+  test('splits pipe-separated volumes and emits separate -v flags (WSL multi-volume)', () => {
+    // executor.ts uses '|' as separator for WSL volumes
+    const cmd = buildDockerCommand('/home/user/videos:/downloads|/mnt/d/media:/target', ['--version']);
+    expect(cmd).toBe("docker run --rm -v '/home/user/videos:/downloads' -v '/mnt/d/media:/target' jauderho/yt-dlp:latest --version");
   });
 });
