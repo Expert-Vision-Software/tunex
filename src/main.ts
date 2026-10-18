@@ -47,6 +47,16 @@ function parseCliFlags(): CliFlags {
 }
 
 async function runInteractive() {
+  // Guard: if stdout is not a TTY, clack/prompts readline will EPIPE on write.
+  // Fall back to direct-mode help so the CLI remains usable in scripts/automation.
+  if (!process.stdout.isTTY) {
+    console.error('Interactive mode requires a TTY. Use direct mode instead:');
+    console.error('  bunx tunex run yt-audio-only -i <url>');
+    console.error('  bunx tunex run yt-video-mp4 -i <url>');
+    console.error('  bunx tunex run bulk-audio-extract -i ./videos');
+    process.exit(1);
+  }
+
   const { mainMenu } = await import('./commands/index.js');
   const { getPlatformInfo } = await import('./core/platform.js');
   const { createLogger } = await import('./utils/logger.js');

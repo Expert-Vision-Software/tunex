@@ -6,7 +6,7 @@ export function psEscapeArg(arg: string): string {
 }
 
 export function psEscapePathForDocker(path: string): string {
-  const hasSpecialChars = /[ &()$`"'|]/.test(path);
+  const hasSpecialChars = /[ &:()$`"':]/.test(path);
   if (!hasSpecialChars) {
     return path;
   }
