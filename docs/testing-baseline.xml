@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <TestingBaseline>
     <Metadata>
-        <LastUpdated>2026-05-02T05:26:06Z</LastUpdated>
+        <LastUpdated>2026-10-18T00:20:00Z</LastUpdated>
         <BaselineId>BL-002</BaselineId>
         <Framework>Bun + Vitest</Framework>
     </Metadata>
@@ -99,6 +99,16 @@
         <Bug>
             <File>src/commands/index.ts:43</File>
             <Description>group() API expects function wrappers, not direct prompt calls</Description>
+            <Fixed>true</Fixed>
+        </Bug>
+        <Bug>
+            <File>src/main.ts:runInteractive</File>
+            <Description>EPIPE crash in non-TTY / automated PowerShell contexts</Description>
+            <Fixed>true</Fixed>
+        </Bug>
+        <Bug>
+            <File>src/utils/ps-safe.ts:psEscapePathForDocker</File>
+            <Description>Windows drive-letter paths not quoted, causing docker 'too many colons' error</Description>
             <Fixed>true</Fixed>
         </Bug>
     </BugsFixed>
