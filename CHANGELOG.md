@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.9.14] - 2026-10-18
+
+### Fixed
+
+- **WSL bun + Windows Docker output path**: When bun runs as a Linux binary on WSL (platform.platform='linux'), `rewriteOutputPath` now correctly detects Windows absolute output paths (`C:\Media\Music\ytube`) and uses pipe (`|`) as the volume separator for Windows Docker contexts. Previously the comma separator was used everywhere, causing Docker to parse `/downloads` as a mode flag → `invalid mode: /downloads`.
+
 ## [0.9.13] - 2026-10-18
 
 ### Fixed

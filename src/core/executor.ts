@@ -21,7 +21,7 @@ export async function executeDocker(volumeMount: string, ytDlpArgs: string[], lo
   return platformExec(cmd, platform.shell);
 }
 
-function rewriteOutputPath(
+export function rewriteOutputPath(
   volumeMount: string,
   ytDlpArgs: string[],
   platform: ReturnType<typeof getPlatformInfo>,
@@ -41,17 +41,15 @@ function rewriteOutputPath(
     const rest = absMatch[2];
     const targetDir = `${drive}:/${rest.replace(/\/[^/]*$/, '')}`;
     const filename = rest.split('/').pop() || '';
+    const workingDir = process.cwd().replace(/\\/g, '/');
 
     if (platform.platform === 'win32' || platform.dockerContext === 'windows') {
-      const hostTarget = targetDir.replace(/\//g, '/');
-      const hostWorking = process.cwd().replace(/\\/g, '/');
-
       const finalArgs = [...ytDlpArgs];
       finalArgs[outputIdx + 1] = `/target/${filename}`;
-      return { finalVolumeMount: `${hostWorking}:/downloads|${hostTarget}:/target`, finalArgs };
+      return { finalVolumeMount: `${workingDir}:/downloads|${targetDir}:/target`, finalArgs };
     }
 
-    const workingDir = process.cwd().replace(/\\/g, '/');
+    // Linux/non-Windows platform: use comma-separated volumes
     const newVolumeMount = `${workingDir}:/downloads,${targetDir}:/target`;
     const finalArgs = [...ytDlpArgs];
     finalArgs[outputIdx + 1] = `/target/${filename}`;
@@ -66,10 +64,9 @@ function rewriteOutputPath(
       const workingDir = process.cwd().replace(/\\/g, '/');
 
       if (platform.platform === 'win32' || platform.dockerContext === 'windows') {
-        const hostWorking = process.cwd().replace(/\\/g, '/');
         const finalArgs = [...ytDlpArgs];
         finalArgs[outputIdx + 1] = `/target/${filename}`;
-        return { finalVolumeMount: `${hostWorking}:/downloads|${hostWorking}/${subdir}:/target`, finalArgs };
+        return { finalVolumeMount: `${workingDir}:/downloads|${workingDir}/${subdir}:/target`, finalArgs };
       }
 
       const newVolumeMount = `${workingDir}:/downloads,${workingDir}/${subdir}:/target`;
@@ -79,6 +76,8 @@ function rewriteOutputPath(
     }
   }
 
+  // WSL + Windows Docker: parseLocalPath handles WSL mount paths (/mnt/c/...)
+  // and converts them to Windows paths for Docker Desktop.
   if (platform.isWSL && platform.dockerContext === 'windows') {
     const parsed = parseLocalPath(outputPath, platform.platform);
     if (parsed) {
@@ -90,6 +89,23 @@ function rewriteOutputPath(
       const finalArgs = [...ytDlpArgs];
       finalArgs[outputIdx + 1] = `/target/${filename}`;
       return { finalVolumeMount: `${hostWorking}:/downloads|${convertedPath}:/target`, finalArgs };
+    }
+
+    // Fallback for Windows-format paths (e.g. C:/Media/Music/ytube) when
+    // parseLocalPath returns null. This handles the case where bun runs as a
+    // Linux binary on WSL but the output path comes from a Windows config.
+    const winMatch = normalizedOutput.match(/^([A-Za-z]):\/(.*)/);
+    if (winMatch) {
+      const drive = winMatch[1].toUpperCase();
+      const rest = winMatch[2];
+      const targetDir = `${drive}:/${rest.replace(/\/[^/]*$/, '')}`;
+      const filename = rest.split('/').pop() || '';
+      const workingDir = process.cwd().replace(/\\/g, '/');
+      const hostWorking = convertWSLToWindowsPath(workingDir);
+
+      const finalArgs = [...ytDlpArgs];
+      finalArgs[outputIdx + 1] = `/target/${filename}`;
+      return { finalVolumeMount: `${hostWorking}:/downloads|${targetDir}:/target`, finalArgs };
     }
   }
 
