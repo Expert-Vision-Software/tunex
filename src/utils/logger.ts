@@ -1,4 +1,5 @@
-import { appendFileSync } from 'fs';
+import { appendFileSync, mkdirSync } from 'fs';
+import { dirname } from 'path';
 
 export interface LoggerOptions {
   logFile?: string;
@@ -18,6 +19,7 @@ export class Logger {
     const formatted = `[${timestamp}] [${level}] ${message}`;
     console.log(formatted);
     if (this.logFile) {
+      mkdirSync(dirname(this.logFile), { recursive: true });
       appendFileSync(this.logFile, formatted + '\n');
     }
   }
@@ -44,6 +46,7 @@ export class Logger {
     const total = this.successCount + this.failureCount;
     console.log(`\n=== Summary: ${this.successCount}/${total} succeeded, ${this.failureCount} failed ===`);
     if (this.logFile) {
+      mkdirSync(dirname(this.logFile), { recursive: true });
       const summary = `\n=== Summary: ${this.successCount}/${total} succeeded, ${this.failureCount} failed ===\n`;
       appendFileSync(this.logFile, summary);
     }

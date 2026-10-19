@@ -1,5 +1,6 @@
 import { test, expect, describe, beforeEach, afterEach } from "bun:test";
 import { Logger, createLogger } from "../logger";
+import { existsSync } from "fs";
 
 describe("logger", () => {
   const originalEnv = process.env;
@@ -82,5 +83,13 @@ describe("logger", () => {
 
   test("Logger accepts options", () => {
     expect(() => new Logger({ logFile: "/tmp/test.log" })).not.toThrow();
+  });
+
+  test("creates log file in non-existent directory", () => {
+    const logPath = "/tmp/tunex-test-enoent-nonexistent-dir/nested/debug.log";
+    const logger = new Logger({ logFile: logPath });
+    expect(() => logger.info("test message")).not.toThrow();
+    logger.printSummary();
+    expect(existsSync(logPath)).toBe(true);
   });
 });
