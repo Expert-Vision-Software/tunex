@@ -2,9 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.9.16] - 2026-10-19
+## [0.10.0] - 2026-10-19
 
-### Added
+### Fixed
+
+- **`tunex.exe` crashes with ENOENT for `package.json` at runtime** (#12): `src/constants.ts` previously read `package.json` via `fileURLToPath(import.meta.url)`, which resolves into bun's virtual filesystem (`/$bunfs/`) in a compiled binary — causing ENOENT before any command ran. Now reads `TUNEX_NAME`/`TUNEX_VERSION` from environment variables (baked in via `bun build --compile --define`), with the fs read preserved as a dev fallback. `src/core/config.ts`'s `getAppName()` also switched to the centralized constant. Closes #12.
+- **Logger crashes with ENOENT when `output/` directory does not exist** (#13): `Logger.log()` and `Logger.printSummary()` now call `mkdirSync` with `recursive:true` before `appendFileSync`, matching the pattern already used in `config.ts`. Closes #13.
+- **`bun test` aborts on Windows due to `executor.test.ts` mock using `#!/bin/sh`** (#16): Replaced hardcoded `/tmp/` paths with `os.tmpdir()` for cross-platform temp paths, and the mock harness now emits a `.cmd` batch script on Windows (`cmd.exe`-compatible) and a `.sh` shell script on Unix. `Bun.spawnSync` on Windows resolves `.cmd` via `PATHEXT` without needing a `cmd /c` wrapper. Closes #16.
+
+### Changed
+
+- **`build` script**: `scripts/build.ts` is a new wrapper that reads `package.json` and invokes `bun build --compile` with `--define` flags for the platform target, replacing the old direct `bun build` call. Closes #12.
+
+## [0.9.16] - 2026-10-19
 
 - **Auto-pull `jauderho/yt-dlp` image before every run**: `executeDocker()` now runs `docker pull` on the configured image (default: `jauderho/yt-dlp:latest`) before each `docker run`. The publisher (jauderho) rebuilds the `:latest` tag within an hour of every yt-dlp upstream release and at least once a week, so this kills the "Your yt-dlp version is older than 90 days" warning that fired on first use for every new install. Closes #10.
 - **`--no-pull` escape hatch**: new CLI flag that skips the auto-pull step and runs against the locally-cached image. Useful for air-gapped networks, slow links, or CI environments where the image is pre-pulled.
