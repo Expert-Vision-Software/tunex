@@ -1,21 +1,13 @@
-import { readFileSync, existsSync, mkdirSync, writeFileSync } from 'fs';
-import { join, dirname } from 'path';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
+import { dirname, join } from 'path';
 import { homedir } from 'os';
 import { parse } from 'dotenv';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+import { APP_NAME } from '../constants.js';
 
 interface Config {
   defaultThreads: number;
   defaultOutputDir: string;
   logFile: string | null;
-}
-
-function getAppName(): string {
-  const pkg = JSON.parse(readFileSync(join(__dirname, '..', '..', 'package.json'), 'utf-8'));
-  return pkg.name;
 }
 
 const MAX_THREADS = 4;
@@ -27,11 +19,10 @@ export const DEFAULT_CONFIG: Config = {
 };
 
 export function getConfigPath(): string {
-  const appName = getAppName();
   if (process.platform === 'win32') {
-    return join(process.env.LOCALAPPDATA || join(homedir(), 'AppData', 'Local'), appName, 'config.json');
+    return join(process.env.LOCALAPPDATA || join(homedir(), 'AppData', 'Local'), APP_NAME, 'config.json');
   }
-  return join(homedir(), '.' + appName, 'config.json');
+  return join(homedir(), '.' + APP_NAME, 'config.json');
 }
 
 export function ensureConfigDir(): void {
