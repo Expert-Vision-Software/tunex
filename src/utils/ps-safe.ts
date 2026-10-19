@@ -1,3 +1,5 @@
+import { YT_DLP_DOCKER_IMAGE } from '../constants.js';
+
 export function psEscapeArg(arg: string): string {
   if (!arg.includes(' ') && !arg.includes('"') && !arg.includes('$') && !arg.includes('`') && !arg.includes('\'') && !arg.includes(':') && !arg.includes('(') && !arg.includes(')')) {
     return arg;
@@ -13,6 +15,14 @@ export function psEscapePathForDocker(path: string): string {
   return `'${path.replace(/'/g, "''")}'`;
 }
 
+/**
+ * Returns the docker binary name, honoring the `TUNEX_DOCKER_CMD` env var
+ * override (useful for podman, testing, or non-standard setups).
+ */
+export function getDockerCmd(): string {
+  return process.env.TUNEX_DOCKER_CMD || 'docker';
+}
+
 export function buildDockerCommand(volumeMount: string, ytDlpArgs: string[]): string {
   const escapedArgs = ytDlpArgs.map(psEscapeArg);
 
@@ -23,5 +33,5 @@ export function buildDockerCommand(volumeMount: string, ytDlpArgs: string[]): st
   const separator = volumeMount.includes('|') ? '|' : ',';
   const volumes = volumeMount.split(separator);
   const volumeFlags = volumes.map(v => `-v ${psEscapePathForDocker(v)}`).join(' ');
-  return `docker run --rm ${volumeFlags} jauderho/yt-dlp:latest ${escapedArgs.join(' ')}`;
+  return `${getDockerCmd()} run --rm ${volumeFlags} ${YT_DLP_DOCKER_IMAGE} ${escapedArgs.join(' ')}`;
 }

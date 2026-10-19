@@ -53,7 +53,7 @@ export const bulkAudioExtract: YtubeCommand = {
         ...inputPaths
       ].filter(Boolean);
 
-      await executeDocker(volumeMount, args);
+      await executeDocker(volumeMount, args, undefined, { noPull: opts.noPull });
     }
 
     sanitizeDownloadedFiles(outputDir);

@@ -27,7 +27,7 @@ export const ytVideoMp4: YtubeCommand = {
         url
       ].filter(Boolean);
 
-      await executeDocker(volumeMount, args);
+      await executeDocker(volumeMount, args, undefined, { noPull: opts.noPull });
     }
 
     sanitizeDownloadedFiles(outputDir);

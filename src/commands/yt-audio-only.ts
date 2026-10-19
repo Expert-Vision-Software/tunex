@@ -29,7 +29,7 @@ export const ytAudioOnly: YtubeCommand = {
         url
       ].filter(Boolean);
 
-      await executeDocker(volumeMount, args);
+      await executeDocker(volumeMount, args, undefined, { noPull: opts.noPull });
     }
 
     sanitizeDownloadedFiles(outputDir);
