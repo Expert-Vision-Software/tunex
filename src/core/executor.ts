@@ -1,6 +1,6 @@
-import { getPlatformInfo, platformExec, requireDocker } from './platform';
-import { parseLocalPath } from './paths';
-import { buildDockerCommand, psEscapeArg } from '../utils/ps-safe';
+import { getPlatformInfo, platformExec, requireDocker } from './platform.js';
+import { parseLocalPath } from './paths.js';
+import { buildDockerCommand, getDockerCmd, psEscapeArg } from '../utils/ps-safe.js';
 import { YT_DLP_DOCKER_IMAGE } from '../constants.js';
 
 export function isMockMode(): boolean {
@@ -27,8 +27,7 @@ export async function executeDocker(
     // test output is auditable (per issue #10 spec). The pull is genuinely
     // skipped — no real docker invocation — but the line proves the
     // auto-pull would have run.
-    const dockerCmd = process.env.TUNEX_DOCKER_CMD || "docker";
-    console.log(`[MOCK] would pull: ${dockerCmd} pull ${YT_DLP_DOCKER_IMAGE}`);
+    console.log(`[MOCK] would pull: ${getDockerCmd()} pull ${YT_DLP_DOCKER_IMAGE}`);
     const cmd = buildDockerCommand(volumeMount, ytDlpArgs);
     console.log("[MOCK] " + cmd);
     return;
@@ -49,13 +48,14 @@ export async function executeDocker(
 /**
  * Pull the latest version of the yt-dlp Docker image.
  *
- * On success, `docker pull` output streams to the user's terminal (the same
- * stream they'd see running the command manually). On failure — offline,
- * registry down, DNS error, auth issue — the error is caught, a warning is
- * logged to stderr, and the function resolves successfully so the caller
- * can continue with the locally-cached image. This is deliberate: a stale
- * cached image is still useful; a hard failure would break every command
- * for any user whose network is briefly unavailable.
+ * On a clean pull (image already up-to-date), output is suppressed to avoid
+ * noise on every run. On an actual update, the pull output streams to stderr
+ * so the user sees what changed. On failure (offline, registry down, DNS,
+ * auth), the error is caught, a warning is logged to stderr, and the function
+ * resolves successfully so the caller can continue with the locally-cached
+ * image. This is deliberate: a stale cached image is still useful; a hard
+ * failure would break every command for any user whose network is briefly
+ * unavailable.
  *
  * The `TUNEX_DOCKER_CMD` environment variable overrides the docker binary
  * for ALL docker invocations (pull + run). This is useful for non-standard
@@ -64,20 +64,46 @@ export async function executeDocker(
  */
 export async function pullDockerImage(image: string): Promise<void> {
   const platform = getPlatformInfo();
-  const dockerCmd = process.env.TUNEX_DOCKER_CMD || 'docker';
-  const cmd = `${dockerCmd} pull ${psEscapeArg(image)}`;
+  const cmd = `${getDockerCmd()} pull ${psEscapeArg(image)}`;
 
-  try {
-    await platformExec(cmd, platform.shell);
-  } catch (err) {
-    const rawMessage = err instanceof Error ? err.message : String(err);
-    const firstLine = rawMessage.split('\n')[0].trim();
+  // Capture stdout and stderr so we can decide what to surface to the user.
+  // Default behavior (per issue #10 spec):
+  //   - "Image is up to date" / "already up-to-date"  → suppress (clean pull, no news)
+  //   - Anything else                                  → stream to stderr (user wants to see)
+  //   - Non-zero exit                                   → warn, don't throw
+  const proc = platform.shell === 'bash'
+    ? Bun.spawn(['bash', '-c', cmd], { stdout: 'pipe', stderr: 'pipe' })
+    : platform.shell === 'pwsh'
+    ? Bun.spawn(['pwsh.exe', '-NoProfile', '-Command', cmd], { stdout: 'pipe', stderr: 'pipe' })
+    : Bun.spawn(['powershell.exe', '-NoProfile', '-Command', cmd], { stdout: 'pipe', stderr: 'pipe' });
+
+  const [stdoutBytes, stderrBytes, exitCode] = await Promise.all([
+    new Response(proc.stdout).text(),
+    new Response(proc.stderr).text(),
+    proc.exited,
+  ]);
+
+  if (exitCode !== 0) {
+    const firstLine = (stderrBytes || stdoutBytes).split('\n').find(l => l.trim().length > 0) || `exit code ${exitCode}`;
     process.stderr.write(
       `[WARN] Failed to pull ${image}. Falling back to locally-cached image.\n` +
-      `  Reason: ${firstLine}\n`
+      `  Reason: ${firstLine.trim()}\n`
     );
-    // Intentionally NOT re-throwing: the cached image is still usable.
+    return;
   }
+
+  // Check for the "no update" signals in either stream. The exact wording
+  // varies across docker versions ("up to date" vs "already up to date"),
+  // so we match on the stable token.
+  const combined = (stdoutBytes + stderrBytes).toLowerCase();
+  const isUpToDate = /\bup to date\b/.test(combined) || /\balready (up to date|pulled)\b/.test(combined);
+  if (isUpToDate) {
+    return; // Clean pull — no output, no noise.
+  }
+
+  // Actual update — surface the pull progress to the user.
+  if (stdoutBytes) process.stderr.write(stdoutBytes);
+  if (stderrBytes) process.stderr.write(stderrBytes);
 }
 
 /**

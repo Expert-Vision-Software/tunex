@@ -10,10 +10,10 @@
         <UnitTests>
             <Framework>Vitest</Framework>
             <TestFiles>11</TestFiles>
-            <Passed>146</Passed>
+            <Passed>148</Passed>
             <Failed>0</Failed>
             <Skipped>1</Skipped>
-            <Total>147</Total>
+            <Total>149</Total>
             <Errors>0</Errors>
             <Duration>2.970</Duration>
         </UnitTests>
@@ -159,8 +159,8 @@
         <Entry>
             <BaselineId>BL-003</BaselineId>
             <Date>2026-10-19</Date>
-            <Changes>Test count +15% (128→147, +19 new tests for auto-pull + --no-pull flag + MOCK audit trail), binary size -30% (112.30→77.66 MB), test duration +226% (0.911→2.970s, intentional: new tests spawn subprocesses)</Changes>
-            <Reason>Auto-pull behavior added: 6 new tests cover executeDocker pull integration, --no-pull escape hatch, pull failure fall-back, pullDockerImage direct invocation, and MOCK-mode would-be-pull audit trail. Binary size drop is a side-effect of changes in the dependency graph, not a regression.</Reason>
+            <Changes>Test count +16% (128→149, +21 new tests for auto-pull + --no-pull flag + MOCK audit trail + output routing), binary size -30% (112.30→77.66 MB), test duration +226% (0.911→2.970s, intentional: new tests spawn subprocesses)</Changes>
+            <Reason>Auto-pull behavior added: 8 new tests cover executeDocker pull integration, --no-pull escape hatch, pull failure fall-back, pullDockerImage direct invocation, MOCK-mode would-be-pull audit trail, and per-spec pull output routing (suppress on up-to-date, stream on actual update). Shared mock harness extracted to top-level helper. Binary size drop is a side-effect of changes in the dependency graph, not a regression.</Reason>
         </Entry>
     </Changelog>
 </TestingBaseline>

@@ -1,6 +1,75 @@
 import { test, expect, describe, beforeEach, afterEach, spyOn } from "bun:test";
 import { isMockMode, executeDocker, pullDockerImage, rewriteOutputPath } from "../executor.js";
 import { _resetPlatformCache } from "../platform.js";
+import { writeFileSync, readFileSync, unlinkSync, chmodSync } from "fs";
+
+/**
+ * Shared helpers for tests that need to mock the docker binary.
+ *
+ * Each describe block should call `mockHarness(id)` with a unique id so the
+ * mock script and marker file don't collide when tests run in parallel
+ * (e.g. across processes in CI or in the same Bun test process).
+ *
+ * The mock script is a tiny shell program that:
+ *   - Always records its argv to a marker file (append mode)
+ *   - Exits 0 for `--version` (so requireDocker's check passes)
+ *   - Exits per the `pullExit` arg for `pull` (so tests can simulate failure)
+ *   - Exits 0 for everything else (the `docker run` step)
+ */
+function mockHarness(id: string) {
+  const scriptPath = `/tmp/tunex-test-${id}-mock.sh`;
+  const markerPath = `/tmp/tunex-test-${id}-marker`;
+  return {
+    scriptPath,
+    markerPath,
+    /** Write a script that exits `pullExit` for `pull`, 0 for everything else. */
+    writeMockScript(pullExit: 0 | 1 = 0): void {
+      const script =
+        `#!/bin/sh\n` +
+        `echo "$@" >> ${markerPath}\n` +
+        `case "$1" in\n` +
+        `  --version) exit 0 ;;\n` +
+        `  pull) exit ${pullExit} ;;\n` +
+        `  *) exit 0 ;;\n` +
+        `esac\n`;
+      writeFileSync(scriptPath, script);
+      chmodSync(scriptPath, 0o755);
+    },
+    /** Read the marker file; returns null if absent. */
+    readMarker(): string | null {
+      try {
+        return readFileSync(markerPath, "utf-8").trim();
+      } catch {
+        return null;
+      }
+    },
+    /** Delete the marker file. No-op if absent. */
+    clearMarker(): void {
+      try {
+        unlinkSync(markerPath);
+      } catch {
+        // Already absent — fine.
+      }
+    },
+  };
+}
+
+/**
+ * Find the recorded line for a given subcommand (e.g. "pull", "run", "--version").
+ * Returns null if not present. The mock script appends one line per invocation:
+ *   <subcommand> <args...>
+ */
+function findInvocation(marker: string, subcommand: string): string | null {
+  const lines = marker.split("\n");
+  for (const line of lines) {
+    // Match the line that starts with the subcommand as its first arg.
+    // We use a word-boundary on the start to avoid partial matches.
+    if (line === subcommand || line.startsWith(subcommand + " ") || line.startsWith(subcommand + "\t")) {
+      return line;
+    }
+  }
+  return null;
+}
 
 describe("executor", () => {
   const originalEnv = process.env;
@@ -93,81 +162,44 @@ describe("executor", () => {
  */
 describe("executeDocker auto-pull", () => {
   const originalEnv = process.env;
-  const scriptPath = "/tmp/tunex-test-pull-mock.sh";
-  const markerPath = "/tmp/tunex-test-pull-marker";
-
-  function writeMockScript(mode: "success" | "pull-fails" | "all-fail"): void {
-    // Smart mock: behavior depends on the called subcommand.
-    //   --version → exit 0 (so requireDocker's check passes)
-    //   pull      → exit per `mode`
-    //   anything else (run) → exit 0
-    // The mode parameter lets each test control the pull outcome while
-    // always letting the docker --version check pass.
-    const pullExit = mode === "pull-fails" || mode === "all-fail" ? 1 : 0;
-    const script =
-      `#!/bin/sh\n` +
-      `echo "$@" >> ${markerPath}\n` +
-      `case "$1" in\n` +
-      `  --version) exit 0 ;;\n` +
-      `  pull) exit ${pullExit} ;;\n` +
-      `  *) exit 0 ;;\n` +
-      `esac\n`;
-    require("fs").writeFileSync(scriptPath, script);
-    require("fs").chmodSync(scriptPath, 0o755);
-  }
-
-  function readMarker(): string | null {
-    try {
-      return require("fs").readFileSync(markerPath, "utf-8").trim();
-    } catch {
-      return null;
-    }
-  }
-
-  function clearMarker(): void {
-    try {
-      require("fs").unlinkSync(markerPath);
-    } catch {
-      // Already absent — fine.
-    }
-  }
+  const harness = mockHarness("autopull");
 
   beforeEach(() => {
     // Real path: no MOCK_DOCKER, TUNEX_DOCKER_CMD points at our recording script.
     process.env = { ...originalEnv };
     delete process.env.MOCK_DOCKER;
-    process.env.TUNEX_DOCKER_CMD = scriptPath;
+    process.env.TUNEX_DOCKER_CMD = harness.scriptPath;
     // Reset the platform cache so checkDocker() re-runs against the new TUNEX_DOCKER_CMD.
     _resetPlatformCache();
-    clearMarker();
+    harness.clearMarker();
   });
 
   afterEach(() => {
     process.env = originalEnv;
-    clearMarker();
+    harness.clearMarker();
   });
 
   test("pulls the yt-dlp image before running in real mode", async () => {
     // All subcommands succeed; we only care that the pull ran.
-    writeMockScript("success");
+    harness.writeMockScript(0);
     try {
       await executeDocker("/cwd:/downloads", ["--version"], undefined, undefined);
     } catch {
       // The mock exits 0, but the run step may still emit output the
       // shell interprets. We only assert on the marker.
     }
-    const marker = readMarker();
+    const marker = harness.readMarker();
     expect(marker).not.toBeNull();
-    // requireDocker() runs `TUNEX_DOCKER_CMD --version` first, then
-    // pullDockerImage runs `TUNEX_DOCKER_CMD pull <image>`, then the
-    // docker run step. So the marker has up to 3 lines in that order.
-    // Verify the pull line is present (not necessarily the first line).
-    expect(marker).toContain("pull");
-    expect(marker).toContain("jauderho/yt-dlp:latest");
+    // Find the actual `pull` invocation line (not the `run` line, which
+    // also references the image). This is the precise assertion the
+    // spec review flagged as too loose (was `toContain("pull")`).
+    const pullLine = findInvocation(marker!, "pull");
+    expect(pullLine).not.toBeNull();
+    expect(pullLine).toContain("jauderho/yt-dlp:latest");
   });
 
   test("skips the pull when noPull option is true", async () => {
-    writeMockScript("success");
+    harness.writeMockScript(0);
     try {
       await executeDocker(
         "/cwd:/downloads",
@@ -178,92 +210,117 @@ describe("executeDocker auto-pull", () => {
     } catch {
       // Ignore run-step output that the shell might interpret.
     }
-    const marker = readMarker();
+    const marker = harness.readMarker();
     expect(marker).not.toBeNull();
-    // With noPull=true, the marker should contain the docker --version
-    // check and the docker run, but NO "pull" line.
-    expect(marker).not.toMatch(/^pull\s/m);
-    expect(marker).not.toContain(" pull ");
+    // Strong assertion: no line in the marker should START with the
+    // word "pull" followed by a separator (i.e. a real pull invocation).
+    // This catches regressions where the pull runs but the args differ.
+    expect(findInvocation(marker!, "pull")).toBeNull();
   });
 
   test("does not abort when the pull fails (fall back to cached image)", async () => {
     // Mock exits 1 only for the pull subcommand; --version and run still
     // exit 0. The pull should fail, log a warning, and let the executor
     // continue to the run step.
-    writeMockScript("pull-fails");
+    harness.writeMockScript(1);
+    let caught: unknown = null;
     try {
       await executeDocker("/cwd:/downloads", ["--version"], undefined, undefined);
-    } catch {
-      // The run step should still succeed; ignore any unexpected errors.
+    } catch (err) {
+      caught = err;
     }
-    const marker = readMarker();
+    const marker = harness.readMarker();
     expect(marker).not.toBeNull();
-    // The pull invocation should still appear in the marker — proving
-    // the pull ran and (correctly) failed gracefully without aborting.
-    expect(marker).toContain("pull");
-    expect(marker).toContain("jauderho/yt-dlp:latest");
+    // The pull invocation must have run (marker has the pull line) and
+    // the executor must have continued to the docker run step
+    // (marker has the `run` line) — proving the pull failure was
+    // graceful and non-preemptive.
+    const pullLine = findInvocation(marker!, "pull");
+    const runLine = findInvocation(marker!, "run");
+    expect(pullLine).not.toBeNull();
+    expect(pullLine).toContain("jauderho/yt-dlp:latest");
+    expect(runLine).not.toBeNull();
+    // The run step should also have completed (no exception bubbled out).
+    // If the run failed for some other reason, capture it for diagnosis.
+    if (caught) {
+      throw new Error(`executor threw unexpectedly: ${caught}`);
+    }
   });
 });
 
 describe("pullDockerImage", () => {
   const originalEnv = process.env;
-  const scriptPath = "/tmp/tunex-test-pull-image-mock.sh";
-  const markerPath = "/tmp/tunex-test-pull-image-marker";
+  const harness = mockHarness("pullimage");
 
-  function writeMockScript(exitCode: number, stderrMsg?: string): void {
-    const stderrLine = stderrMsg
-      ? `echo "${stderrMsg}" >&2\n`
-      : "";
+  /** Mock variant: a one-shot pull command, no smart subcommand handling. */
+  function writeOneShotMock(exitCode: number, stdoutMsg?: string, stderrMsg?: string): void {
+    const stdoutLine = stdoutMsg ? `echo "${stdoutMsg}"\n` : "";
+    const stderrLine = stderrMsg ? `echo "${stderrMsg}" >&2\n` : "";
     const script =
       `#!/bin/sh\n` +
-      `echo "$@" > ${markerPath}\n` +
+      `echo "$@" > ${harness.markerPath}\n` +
+      stdoutLine +
       stderrLine +
       `exit ${exitCode}\n`;
-    require("fs").writeFileSync(scriptPath, script);
-    require("fs").chmodSync(scriptPath, 0o755);
-  }
-
-  function readMarker(): string | null {
-    try {
-      return require("fs").readFileSync(markerPath, "utf-8").trim();
-    } catch {
-      return null;
-    }
-  }
-
-  function clearMarker(): void {
-    try {
-      require("fs").unlinkSync(markerPath);
-    } catch {
-      // Already absent — fine.
-    }
+    writeFileSync(harness.scriptPath, script);
+    chmodSync(harness.scriptPath, 0o755);
   }
 
   beforeEach(() => {
     process.env = { ...originalEnv };
-    process.env.TUNEX_DOCKER_CMD = scriptPath;
+    process.env.TUNEX_DOCKER_CMD = harness.scriptPath;
     // Reset the platform cache so checkDocker() re-runs against the new TUNEX_DOCKER_CMD.
     _resetPlatformCache();
-    clearMarker();
+    harness.clearMarker();
   });
 
   afterEach(() => {
     process.env = originalEnv;
-    clearMarker();
+    harness.clearMarker();
   });
 
   test("invokes the configured pull command", async () => {
-    writeMockScript(0);
+    writeOneShotMock(0);
     await pullDockerImage("jauderho/yt-dlp:latest");
-    const marker = readMarker();
+    const marker = harness.readMarker();
     expect(marker).not.toBeNull();
     expect(marker).toContain("jauderho/yt-dlp:latest");
   });
 
   test("warns but resolves when the pull command fails", async () => {
-    writeMockScript(1, "simulated network error");
+    writeOneShotMock(1, "", "simulated network error");
     // Should NOT throw — failure is swallowed with a warning.
     await expect(pullDockerImage("jauderho/yt-dlp:latest")).resolves.toBeUndefined();
+  });
+
+  test("suppresses output on a clean pull (image up to date)", async () => {
+    // The mock prints "Status: Image is up to date" — the executor should
+    // detect this and NOT forward any output to the user.
+    writeOneShotMock(0, "Status: Image is up to date, something:else");
+    const writeSpy = spyOn(process.stderr, "write").mockImplementation(() => true);
+    try {
+      await pullDockerImage("jauderho/yt-dlp:latest");
+      // The "up to date" text should not appear on stderr.
+      const allStderr = writeSpy.mock.calls.map(args => String(args[0])).join("");
+      expect(allStderr).not.toContain("Image is up to date");
+    } finally {
+      writeSpy.mockRestore();
+    }
+  });
+
+  test("streams output on an actual image update", async () => {
+    // The mock simulates a real download (no "up to date" signal).
+    writeOneShotMock(0, "Downloading layer 1", "Pull complete");
+    const writeSpy = spyOn(process.stderr, "write").mockImplementation(() => true);
+    try {
+      await pullDockerImage("jauderho/yt-dlp:latest");
+      // The download progress should be surfaced to the user.
+      const allStderr = writeSpy.mock.calls.map(args => String(args[0])).join("");
+      expect(allStderr).toContain("Downloading layer 1");
+      expect(allStderr).toContain("Pull complete");
+    } finally {
+      writeSpy.mockRestore();
+    }
   });
 });
 

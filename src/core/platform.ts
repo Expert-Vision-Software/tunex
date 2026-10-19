@@ -2,6 +2,8 @@ export type Shell = 'pwsh' | 'powershell' | 'bash';
 export type ExecutionPlatform = 'windows' | 'wsl' | 'linux';
 export type DockerContext = 'windows' | 'linux';
 
+import { getDockerCmd } from '../utils/ps-safe.js';
+
 export interface PlatformInfo {
   platform: ExecutionPlatform;
   shell: Shell;
@@ -11,7 +13,6 @@ export interface PlatformInfo {
 }
 
 let cachedPlatformInfo: PlatformInfo | null = null;
-
 function checkWSL(): boolean {
   try {
     const result = Bun.spawnSync({ cmd: ['cat', '/proc/version'], stdout: 'pipe' });
@@ -25,7 +26,7 @@ function checkWSL(): boolean {
 
 function checkDocker(): boolean {
   try {
-    const dockerCmd = process.env.TUNEX_DOCKER_CMD || 'docker';
+    const dockerCmd = getDockerCmd();
     const result = Bun.spawnSync({ cmd: [dockerCmd, '--version'], stdout: 'pipe' });
     return result.exitCode === 0;
   } catch {
