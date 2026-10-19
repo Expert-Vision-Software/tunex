@@ -2,6 +2,8 @@ import { test, expect, describe, beforeEach, afterEach, spyOn } from "bun:test";
 import { isMockMode, executeDocker, pullDockerImage, rewriteOutputPath } from "../executor.js";
 import { _resetPlatformCache } from "../platform.js";
 import { writeFileSync, readFileSync, unlinkSync, chmodSync } from "fs";
+import os from "os";
+import { platform } from "process";
 
 /**
  * Shared helpers for tests that need to mock the docker binary.
@@ -17,23 +19,41 @@ import { writeFileSync, readFileSync, unlinkSync, chmodSync } from "fs";
  *   - Exits 0 for everything else (the `docker run` step)
  */
 function mockHarness(id: string) {
-  const scriptPath = `/tmp/tunex-test-${id}-mock.sh`;
-  const markerPath = `/tmp/tunex-test-${id}-marker`;
+  const tmpDir = os.tmpdir();
+  const isWin = platform === "win32";
+  const scriptPath = `${tmpDir}/tunex-test-${id}-mock${isWin ? ".cmd" : ".sh"}`;
+  const markerPath = `${tmpDir}/tunex-test-${id}-marker`;
   return {
     scriptPath,
     markerPath,
     /** Write a script that exits `pullExit` for `pull`, 0 for everything else. */
     writeMockScript(pullExit: 0 | 1 = 0): void {
-      const script =
-        `#!/bin/sh\n` +
-        `echo "$@" >> ${markerPath}\n` +
-        `case "$1" in\n` +
-        `  --version) exit 0 ;;\n` +
-        `  pull) exit ${pullExit} ;;\n` +
-        `  *) exit 0 ;;\n` +
-        `esac\n`;
-      writeFileSync(scriptPath, script);
-      chmodSync(scriptPath, 0o755);
+      if (isWin) {
+        // Windows batch script: cmd.exe does not have a shebang mechanism, so we
+        // write a .cmd file and spawn it directly (Bun.spawnSync on Windows resolves
+        // .cmd via PATHEXT). We use a call-gate to capture %ERRORLEVEL% from the
+        // compound command before exiting.
+        const pullCase = pullExit === 1 ? "1" : "0";
+        const script =
+          `@echo off\n` +
+          `call :gate %~1 %~2 & exit /b %ERRORLEVEL%\n` +
+          `:gate\n` +
+          `echo %* >> "${markerPath.replace(/\\/g, "\\\\")}"\n` +
+          `if "%~2"=="pull" exit /b ${pullCase}\n` +
+          `exit /b 0\n`;
+        writeFileSync(scriptPath, script);
+      } else {
+        const script =
+          `#!/bin/sh\n` +
+          `echo "$@" >> ${markerPath}\n` +
+          `case "$1" in\n` +
+          `  --version) exit 0 ;;\n` +
+          `  pull) exit ${pullExit} ;;\n` +
+          `  *) exit 0 ;;\n` +
+          `esac\n`;
+        writeFileSync(scriptPath, script);
+        chmodSync(scriptPath, 0o755);
+      }
     },
     /** Read the marker file; returns null if absent. */
     readMarker(): string | null {
@@ -256,14 +276,26 @@ describe("pullDockerImage", () => {
   function writeOneShotMock(exitCode: number, stdoutMsg?: string, stderrMsg?: string): void {
     const stdoutLine = stdoutMsg ? `echo "${stdoutMsg}"\n` : "";
     const stderrLine = stderrMsg ? `echo "${stderrMsg}" >&2\n` : "";
-    const script =
-      `#!/bin/sh\n` +
-      `echo "$@" > ${harness.markerPath}\n` +
-      stdoutLine +
-      stderrLine +
-      `exit ${exitCode}\n`;
-    writeFileSync(harness.scriptPath, script);
-    chmodSync(harness.scriptPath, 0o755);
+    if (platform === "win32") {
+      const script =
+        `@echo off\n` +
+        `call :gate %~1 %~2 & exit /b %ERRORLEVEL%\n` +
+        `:gate\n` +
+        `echo %* > "${harness.markerPath.replace(/\\/g, "\\\\")}"\n` +
+        stdoutLine.replace(/"/g, '""').replace(/\n$/, '"\n') +
+        (stderrMsg ? stderrLine.replace(/"/g, '""').replace(/\n$/, '"\n') : "") +
+        `exit /b ${exitCode}\n`;
+      writeFileSync(harness.scriptPath, script);
+    } else {
+      const script =
+        `#!/bin/sh\n` +
+        `echo "$@" > ${harness.markerPath}\n` +
+        stdoutLine +
+        stderrLine +
+        `exit ${exitCode}\n`;
+      writeFileSync(harness.scriptPath, script);
+      chmodSync(harness.scriptPath, 0o755);
+    }
   }
 
   beforeEach(() => {
