@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.9.16] - 2026-10-19
+
+### Added
+
+- **Auto-pull `jauderho/yt-dlp` image before every run**: `executeDocker()` now runs `docker pull` on the configured image (default: `jauderho/yt-dlp:latest`) before each `docker run`. The publisher (jauderho) rebuilds the `:latest` tag within an hour of every yt-dlp upstream release and at least once a week, so this kills the "Your yt-dlp version is older than 90 days" warning that fired on first use for every new install. Closes #10.
+- **`--no-pull` escape hatch**: new CLI flag that skips the auto-pull step and runs against the locally-cached image. Useful for air-gapped networks, slow links, or CI environments where the image is pre-pulled.
+- **`TUNEX_DOCKER_CMD` env override**: the docker binary can be swapped at runtime (e.g. `TUNEX_DOCKER_CMD=podman`). Also unlocks a single env-var override for the test suite's mock harness.
+- **MOCK audit trail**: even when `MOCK_DOCKER=true`, the executor logs `[MOCK] would pull: <cmd> <image>` so test output is auditable per the issue spec.
+
+### Changed
+
+- **Pull output routing per spec**: `pullDockerImage` now captures both stdout and stderr, suppresses output on a clean pull (`Image is up to date` / `already up to date`), and streams the progress to stderr on an actual update. No more "Image is up to date" line on every command.
+- **Image name centralization**: the `jauderho/yt-dlp:latest` string is now a single exported constant `YT_DLP_DOCKER_IMAGE` in `src/constants.ts`. All three call sites (`buildDockerCommand`, `checkDocker`, `pullDockerImage`) read it via the `getDockerCmd()` helper.
+- **Fail-soft on pull error**: when the pull fails (offline, registry down, DNS, auth), the executor logs `[WARN] Failed to pull <image>. Falling back to locally-cached image.` to stderr and continues to `docker run` with the cached image. A stale cached image is still useful; a hard failure would break every command for any user whose network is briefly unavailable.
+
+### Removed
+
+- Dead `build: ./docker` line in `docker-compose.yml` — the referenced directory did not exist.
+
+### Tests
+
+- 8 new test cases added to `src/core/__tests__/executor.test.ts`. Test count: 128 → 149 (+16%).
+- Shared `mockHarness(id)` factory extracted to top-level helper to remove duplication between describe blocks.
+- `findInvocation()` helper for precise subcommand-line matching (the previous `toContain("pull")` assertion matched any substring including the `run` line).
+
 ## [0.9.15] - 2026-10-18
 
 ### Fixed
