@@ -1,24 +1,83 @@
 import { getPlatformInfo, platformExec, requireDocker } from './platform';
 import { parseLocalPath } from './paths';
-import { buildDockerCommand } from '../utils/ps-safe';
+import { buildDockerCommand, psEscapeArg } from '../utils/ps-safe';
+import { YT_DLP_DOCKER_IMAGE } from '../constants.js';
 
 export function isMockMode(): boolean {
   return process.env.MOCK_DOCKER === 'true';
 }
 
-export async function executeDocker(volumeMount: string, ytDlpArgs: string[], localInputPath?: string): Promise<void> {
+export interface ExecuteDockerOptions {
+  /**
+   * When true, skip the `docker pull` step entirely and run against whatever
+   * image is already cached locally. Useful for air-gapped networks, slow
+   * links, or CI environments where the image is pre-pulled.
+   */
+  noPull?: boolean;
+}
+
+export async function executeDocker(
+  volumeMount: string,
+  ytDlpArgs: string[],
+  localInputPath?: string,
+  options?: ExecuteDockerOptions,
+): Promise<void> {
   if (isMockMode()) {
+    // Even in mock mode, advertise what the executor would have done so
+    // test output is auditable (per issue #10 spec). The pull is genuinely
+    // skipped — no real docker invocation — but the line proves the
+    // auto-pull would have run.
+    const dockerCmd = process.env.TUNEX_DOCKER_CMD || "docker";
+    console.log(`[MOCK] would pull: ${dockerCmd} pull ${YT_DLP_DOCKER_IMAGE}`);
     const cmd = buildDockerCommand(volumeMount, ytDlpArgs);
-    console.log('[MOCK] ' + cmd);
+    console.log("[MOCK] " + cmd);
     return;
   }
 
   requireDocker();
 
+  if (!options?.noPull) {
+    await pullDockerImage(YT_DLP_DOCKER_IMAGE);
+  }
+
   const platform = getPlatformInfo();
   const { finalVolumeMount, finalArgs } = rewriteOutputPath(volumeMount, ytDlpArgs, platform, localInputPath);
   const cmd = buildDockerCommand(finalVolumeMount, finalArgs);
   return platformExec(cmd, platform.shell);
+}
+
+/**
+ * Pull the latest version of the yt-dlp Docker image.
+ *
+ * On success, `docker pull` output streams to the user's terminal (the same
+ * stream they'd see running the command manually). On failure — offline,
+ * registry down, DNS error, auth issue — the error is caught, a warning is
+ * logged to stderr, and the function resolves successfully so the caller
+ * can continue with the locally-cached image. This is deliberate: a stale
+ * cached image is still useful; a hard failure would break every command
+ * for any user whose network is briefly unavailable.
+ *
+ * The `TUNEX_DOCKER_CMD` environment variable overrides the docker binary
+ * for ALL docker invocations (pull + run). This is useful for non-standard
+ * setups (e.g. `podman`) and for testing the failure path without hitting
+ * a real registry.
+ */
+export async function pullDockerImage(image: string): Promise<void> {
+  const platform = getPlatformInfo();
+  const dockerCmd = process.env.TUNEX_DOCKER_CMD || 'docker';
+  const cmd = `${dockerCmd} pull ${psEscapeArg(image)}`;
+
+  try {
+    await platformExec(cmd, platform.shell);
+  } catch (err) {
+    const rawMessage = err instanceof Error ? err.message : String(err);
+    const firstLine = rawMessage.split('\n')[0].trim();
+    process.stderr.write(
+      `[WARN] Failed to pull ${image}. Falling back to locally-cached image.\n` +
+      `  Reason: ${firstLine}\n`
+    );
+    // Intentionally NOT re-throwing: the cached image is still usable.
+  }
 }
 
 /**

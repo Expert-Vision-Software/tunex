@@ -25,7 +25,8 @@ function checkWSL(): boolean {
 
 function checkDocker(): boolean {
   try {
-    const result = Bun.spawnSync({ cmd: ['docker', '--version'], stdout: 'pipe' });
+    const dockerCmd = process.env.TUNEX_DOCKER_CMD || 'docker';
+    const result = Bun.spawnSync({ cmd: [dockerCmd, '--version'], stdout: 'pipe' });
     return result.exitCode === 0;
   } catch {
     return false;
@@ -131,6 +132,11 @@ export function getPlatformInfo(): PlatformInfo {
     cachedPlatformInfo = detectPlatform();
   }
   return cachedPlatformInfo;
+}
+
+/** @internal Test hook — reset the platform cache so the next call to getPlatformInfo re-detects. */
+export function _resetPlatformCache(): void {
+  cachedPlatformInfo = null;
 }
 
 export function requireDocker(): void {

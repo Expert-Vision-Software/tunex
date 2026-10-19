@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <TestingBaseline>
     <Metadata>
-        <LastUpdated>2026-10-18T00:20:00Z</LastUpdated>
-        <BaselineId>BL-002</BaselineId>
+        <LastUpdated>2026-10-19T07:00:00Z</LastUpdated>
+        <BaselineId>BL-003</BaselineId>
         <Framework>Bun + Vitest</Framework>
     </Metadata>
 
@@ -10,12 +10,12 @@
         <UnitTests>
             <Framework>Vitest</Framework>
             <TestFiles>11</TestFiles>
-            <Passed>127</Passed>
+            <Passed>146</Passed>
             <Failed>0</Failed>
             <Skipped>1</Skipped>
-            <Total>128</Total>
+            <Total>147</Total>
             <Errors>0</Errors>
-            <Duration>0.911</Duration>
+            <Duration>2.970</Duration>
         </UnitTests>
         <IntegrationTests>
             <Framework>Docker + yt-dlp mock</Framework>
@@ -39,14 +39,14 @@
         </Coverage>
         <Build>
             <Status>Success</Status>
-            <BuildTime>0.424</BuildTime>
+            <BuildTime>1.271</BuildTime>
             <TotalProjects>1</TotalProjects>
             <Warnings>0</Warnings>
             <OutputDirectory>./dist</OutputDirectory>
             <FileCount>2</FileCount>
-            <TotalSizeMB>112.30</TotalSizeMB>
+            <TotalSizeMB>77.66</TotalSizeMB>
             <BinaryName>tunex.exe</BinaryName>
-            <BinarySizeMB>112.30</BinarySizeMB>
+            <BinarySizeMB>77.66</BinarySizeMB>
         </Build>
     </Backend>
 
@@ -69,7 +69,6 @@
         <E2ETests>
             <Status>Not Applicable</Status>
             <Total>0</Total>
-            <Passed>0</Passed>
             <Skipped>0</Skipped>
             <Failed>0</Failed>
             <Duration>0.00</Duration>
@@ -109,6 +108,11 @@
         <Bug>
             <File>src/utils/ps-safe.ts:psEscapePathForDocker</File>
             <Description>Windows drive-letter paths not quoted, causing docker 'too many colons' error</Description>
+            <Fixed>true</Fixed>
+        </Bug>
+        <Bug>
+            <File>src/core/executor.ts:executeDocker</File>
+            <Description>Stale 90-day-old yt-dlp image warning on first run; image name duplicated between compose and code; dead 'build: ./docker' directive referenced non-existent directory</Description>
             <Fixed>true</Fixed>
         </Bug>
     </BugsFixed>
@@ -151,6 +155,12 @@
             <Date>2026-05-02</Date>
             <Changes>Build binary now available: tunex.exe (112.30 MB)</Changes>
             <Reason>Build binaries now included in baseline metrics</Reason>
+        </Entry>
+        <Entry>
+            <BaselineId>BL-003</BaselineId>
+            <Date>2026-10-19</Date>
+            <Changes>Test count +15% (128→147, +19 new tests for auto-pull + --no-pull flag + MOCK audit trail), binary size -30% (112.30→77.66 MB), test duration +226% (0.911→2.970s, intentional: new tests spawn subprocesses)</Changes>
+            <Reason>Auto-pull behavior added: 6 new tests cover executeDocker pull integration, --no-pull escape hatch, pull failure fall-back, pullDockerImage direct invocation, and MOCK-mode would-be-pull audit trail. Binary size drop is a side-effect of changes in the dependency graph, not a regression.</Reason>
         </Entry>
     </Changelog>
 </TestingBaseline>

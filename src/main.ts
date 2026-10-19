@@ -8,6 +8,7 @@ interface CliFlags {
   flatten?: boolean;
   stopOnError?: boolean;
   logFile?: string;
+  noPull?: boolean;
   command?: string;
   subcommand?: string;
 }
@@ -15,7 +16,7 @@ interface CliFlags {
 function parseCliFlags(): CliFlags {
   const args = Bun.argv.slice(2);
   const flags: CliFlags = {};
-  
+
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
     if (arg === '--help' || arg === '-h' || arg === 'help') {
@@ -32,6 +33,8 @@ function parseCliFlags(): CliFlags {
       flags.flatten = true;
     } else if (arg === '--stop-on-error') {
       flags.stopOnError = true;
+    } else if (arg === '--no-pull') {
+      flags.noPull = true;
     } else if (arg === '--log-file') {
       flags.logFile = args[++i];
     } else if (arg === 'run' || arg === 'start' || arg === 'config') {
@@ -42,7 +45,7 @@ function parseCliFlags(): CliFlags {
       flags.subcommand = arg;
     }
   }
-  
+
   return flags;
 }
 
@@ -108,6 +111,7 @@ async function runDirect(flags: CliFlags) {
     threads: Math.min(flags.threads ?? config.defaultThreads, 4),
     continueOnError: !flags.stopOnError,
     flatten: flags.flatten,
+    noPull: flags.noPull,
   };
 
   let success = true;
@@ -150,6 +154,7 @@ function printHelp(): void {
   console.log('  -t, --threads <n>       Number of threads (max 4)');
   console.log('  --flatten              Flatten output directory structure');
   console.log('  --stop-on-error        Stop on first error');
+  console.log('  --no-pull              Skip `docker pull` and use the cached image');
   console.log('  --log-file <path>      Log file path');
   console.log('\nExamples:');
   console.log('  bunx tunex                                          # Interactive mode');
