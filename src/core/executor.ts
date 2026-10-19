@@ -1,5 +1,5 @@
 import { getPlatformInfo, platformExec, requireDocker } from './platform';
-import { parseLocalPath, convertWSLToWindowsPath } from './paths';
+import { parseLocalPath } from './paths';
 import { buildDockerCommand } from '../utils/ps-safe';
 
 export function isMockMode(): boolean {
@@ -21,6 +21,43 @@ export async function executeDocker(volumeMount: string, ytDlpArgs: string[], lo
   return platformExec(cmd, platform.shell);
 }
 
+/**
+ * Extract the parent directory and filename from a path.
+ * The "filename" is the last segment, typically a yt-dlp template
+ * (e.g. "%(uploader)s - %(title)s.%(ext)s"). The "dir" is everything
+ * before that — this is what should be mounted into the container.
+ *
+ * Handles both Windows (C:\foo\bar) and Unix (/foo/bar) paths.
+ */
+function splitPathForVolume(path: string): { dir: string; filename: string } {
+  const normalized = path.replace(/\\/g, '/');
+  const isWindowsAbs = /^[A-Za-z]:\//.test(normalized);
+  const isUnixAbs = !isWindowsAbs && normalized.startsWith('/');
+  const drive = isWindowsAbs ? normalized[0] : '';
+
+  // Strip drive letter (Windows) or leading slash (Unix abs) for splitting
+  const stripped = isWindowsAbs
+    ? normalized.slice(2)
+    : (isUnixAbs ? normalized.slice(1) : normalized);
+
+  const parts = stripped.split('/').filter(p => p.length > 0);
+  if (parts.length === 0) {
+    return { dir: isWindowsAbs ? `${drive}:` : '.', filename: '' };
+  }
+  const filename = parts[parts.length - 1] || '';
+  const dirParts = parts.slice(0, -1);
+  if (dirParts.length === 0) {
+    return { dir: isWindowsAbs ? `${drive}:` : '.', filename };
+  }
+  const joined = dirParts.join('/');
+  // Preserve leading slash for absolute Unix paths so callers can detect
+  // abs vs rel from the returned dir.
+  const dir = isWindowsAbs
+    ? `${drive}:/${joined}`
+    : (isUnixAbs ? `/${joined}` : joined);
+  return { dir, filename };
+}
+
 export function rewriteOutputPath(
   volumeMount: string,
   ytDlpArgs: string[],
@@ -33,81 +70,80 @@ export function rewriteOutputPath(
   }
 
   const outputPath = ytDlpArgs[outputIdx + 1];
-  const normalizedOutput = outputPath.replace(/\\/g, '/');
+  const { dir: outputDir, filename } = splitPathForVolume(outputPath);
+  const workingDir = process.cwd().replace(/\\/g, '/');
 
-  const absMatch = normalizedOutput.match(/^([A-Za-z]):\/(.*)/);
-  if (absMatch) {
-    const drive = absMatch[1].toUpperCase();
-    const rest = absMatch[2];
-    const targetDir = `${drive}:/${rest.replace(/\/[^/]*$/, '')}`;
-    const filename = rest.split('/').pop() || '';
-    const workingDir = process.cwd().replace(/\\/g, '/');
+  // Determine the path style for volume mounts:
+  // - Native Windows: use Windows-style paths (C:\foo) — docker CLI on Windows
+  //   accepts these directly via Docker Desktop.
+  // - WSL: use WSL-style paths (/mnt/c/foo) — the WSL dockerd (or Docker
+  //   Desktop WSL integration) accepts these. NEVER convert to Windows
+  //   format, since the WSL dockerd rejects C:/... spec.
+  // - Native Linux: use Linux paths as-is.
+  const isWindowsContext = platform.platform === 'windows' || platform.dockerContext === 'windows';
+  const pathStyle: 'windows' | 'wsl' | 'linux' = platform.platform === 'windows' ? 'windows' : (platform.isWSL ? 'wsl' : 'linux');
+  const separator = isWindowsContext ? '|' : ',';
 
-    if (platform.platform === 'win32' || platform.dockerContext === 'windows') {
-      const finalArgs = [...ytDlpArgs];
-      finalArgs[outputIdx + 1] = `/target/${filename}`;
-      return { finalVolumeMount: `${workingDir}:/downloads|${targetDir}:/target`, finalArgs };
+  // Resolve the output dir to an absolute path in the correct path style.
+  // The parsed type tells us what kind of path the user gave us.
+  const parsed = parseLocalPath(outputPath, platform.platform);
+  let absoluteOutputDir: string;
+
+  if (parsed?.type === 'windows') {
+    // User gave a Windows path. On native Windows, keep Windows format.
+    // On WSL, we still need to convert to the WSL equivalent (/mnt/c/...)
+    // because the WSL dockerd can't read C:\ paths.
+    if (pathStyle === 'windows') {
+      absoluteOutputDir = outputDir;
+    } else if (pathStyle === 'wsl') {
+      // Convert C:\foo\bar to /mnt/c/foo/bar
+      const drive = outputDir[0].toLowerCase();
+      const rest = outputDir.slice(2); // strip "C:"
+      absoluteOutputDir = `/mnt/${drive}${rest}`;
+    } else {
+      // Native Linux with a Windows path — shouldn't normally happen
+      absoluteOutputDir = outputDir;
     }
-
-    // Linux/non-Windows platform: use comma-separated volumes
-    const newVolumeMount = `${workingDir}:/downloads,${targetDir}:/target`;
-    const finalArgs = [...ytDlpArgs];
-    finalArgs[outputIdx + 1] = `/target/${filename}`;
-    return { finalVolumeMount: newVolumeMount, finalArgs };
-  }
-
-  if (normalizedOutput.startsWith('./') || normalizedOutput.startsWith('../')) {
-    const parts = normalizedOutput.replace(/^\.\//, '').split('/');
-    if (parts.length > 1) {
-      const subdir = parts.slice(0, -1).join('/');
-      const filename = parts[parts.length - 1];
-      const workingDir = process.cwd().replace(/\\/g, '/');
-
-      if (platform.platform === 'win32' || platform.dockerContext === 'windows') {
-        const finalArgs = [...ytDlpArgs];
-        finalArgs[outputIdx + 1] = `/target/${filename}`;
-        return { finalVolumeMount: `${workingDir}:/downloads|${workingDir}/${subdir}:/target`, finalArgs };
+  } else if (parsed?.type === 'wsl-host') {
+    // User gave a WSL path like /mnt/c/foo — keep as-is on WSL, or convert
+    // to Windows path on native Windows.
+    if (pathStyle === 'wsl') {
+      absoluteOutputDir = outputDir;
+    } else if (pathStyle === 'windows') {
+      // Convert /mnt/c/foo to C:/foo
+      const match = outputDir.match(/^\/mnt\/([a-z])\/(.*)/);
+      if (match) {
+        absoluteOutputDir = `${match[1].toUpperCase()}:/${match[2]}`;
+      } else {
+        absoluteOutputDir = outputDir;
       }
-
-      const newVolumeMount = `${workingDir}:/downloads,${workingDir}/${subdir}:/target`;
-      const finalArgs = [...ytDlpArgs];
-      finalArgs[outputIdx + 1] = `/target/${filename}`;
-      return { finalVolumeMount: newVolumeMount, finalArgs };
+    } else {
+      absoluteOutputDir = outputDir;
     }
+  } else if (outputDir.startsWith('/')) {
+    // Absolute Linux path
+    absoluteOutputDir = outputDir;
+  } else if (outputDir === '.') {
+    // Output is in cwd — no second volume needed
+    absoluteOutputDir = workingDir;
+  } else {
+    // Relative path with subdir
+    absoluteOutputDir = `${workingDir}/${outputDir}`;
   }
 
-  // WSL + Windows Docker: parseLocalPath handles WSL mount paths (/mnt/c/...)
-  // and converts them to Windows paths for Docker Desktop.
-  if (platform.isWSL && platform.dockerContext === 'windows') {
-    const parsed = parseLocalPath(outputPath, platform.platform);
-    if (parsed) {
-      const convertedPath = convertWSLToWindowsPath(parsed.dockerVolumeSrc);
-      const filename = parsed.normalized.split('/').pop() || '';
-      const workingDir = process.cwd().replace(/\\/g, '/');
-      const hostWorking = convertWSLToWindowsPath(workingDir);
-
-      const finalArgs = [...ytDlpArgs];
-      finalArgs[outputIdx + 1] = `/target/${filename}`;
-      return { finalVolumeMount: `${hostWorking}:/downloads|${convertedPath}:/target`, finalArgs };
-    }
-
-    // Fallback for Windows-format paths (e.g. C:/Media/Music/ytube) when
-    // parseLocalPath returns null. This handles the case where bun runs as a
-    // Linux binary on WSL but the output path comes from a Windows config.
-    const winMatch = normalizedOutput.match(/^([A-Za-z]):\/(.*)/);
-    if (winMatch) {
-      const drive = winMatch[1].toUpperCase();
-      const rest = winMatch[2];
-      const targetDir = `${drive}:/${rest.replace(/\/[^/]*$/, '')}`;
-      const filename = rest.split('/').pop() || '';
-      const workingDir = process.cwd().replace(/\\/g, '/');
-      const hostWorking = convertWSLToWindowsPath(workingDir);
-
-      const finalArgs = [...ytDlpArgs];
-      finalArgs[outputIdx + 1] = `/target/${filename}`;
-      return { finalVolumeMount: `${hostWorking}:/downloads|${targetDir}:/target`, finalArgs };
-    }
+  // If the resolved output dir is the same as the working dir, no second
+  // volume mount is needed (the working dir is already mounted at /downloads,
+  // and the file is at the root of the working dir).
+  // E.g. -o ./file.mp3 → outputDir='.' and absoluteOutputDir=workingDir
+  if (outputDir === '.' || absoluteOutputDir === workingDir) {
+    return { finalVolumeMount: volumeMount, finalArgs: ytDlpArgs };
   }
 
-  return { finalVolumeMount: volumeMount, finalArgs: ytDlpArgs };
+  const finalArgs = [...ytDlpArgs];
+  finalArgs[outputIdx + 1] = `/target/${filename}`;
+
+  return {
+    finalVolumeMount: `${volumeMount}${separator}${absoluteOutputDir}:/target`,
+    finalArgs,
+  };
 }
