@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.9.15] - 2026-10-18
+
+### Fixed
+
+- **Platform misdetection on Windows with WSL installed**: `checkBashOnWindows()` in `src/core/platform.ts` now checks environment variables (`SHELL`, `MSYSTEM`, `WSL_DISTRO_NAME`) instead of whether `bash.exe` exists. Previously, on any modern Windows dev box with WSL or Git Bash installed, the function returned `true` and misdetected native Windows execution as Linux, causing the wrong volume separator (`,` instead of `|`) and `docker: invalid mode: /downloads` errors.
+- **WSL path conversion breaks WSL Docker**: `rewriteOutputPath()` in `src/core/executor.ts` now keeps WSL native paths (`/mnt/c/...`) for WSL executions instead of converting to Windows format (`C:/...`). The WSL dockerd (and Docker Desktop WSL integration) accepts WSL paths; Windows-format specs fail with `invalid mode: /target` because the colon in the drive letter splits the spec.
+- **Output files land one directory level deeper than user specified**: `rewriteOutputPath()` now extracts the parent directory of the output path and mounts that at `/target`, rather than mounting the full output pattern (which created a literal `%(uploader)s - %(title)s.%(ext)s` directory inside the user's intended output dir).
+
 ## [0.9.14] - 2026-10-18
 
 ### Fixed
